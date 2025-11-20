@@ -1,0 +1,259 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    /* Màu xanh lá cây chính */
+    --primary: 142 76% 36%;  /* #16a34a */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 142 100% 95%;  /* Xanh rất nhạt */
+    --secondary-foreground: 142 76% 36%;
+    --muted: 142 100% 95%;
+    --muted-foreground: 142 25% 50%;
+    --accent: 142 100% 90%;  /* Xanh nhạt */
+    --accent-foreground: 142 76% 36%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 142 30% 85%;
+    --input: 142 30% 85%;
+    --ring: 142 76% 36%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 142 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 142 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 142 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 142 91% 59%;
+    --primary-foreground: 142 84% 4.9%;
+    --secondary: 142 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 142 32% 17%;
+    --muted-foreground: 142 20% 65%;
+    --accent: 142 32% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 142 32% 17%;
+    --input: 142 32% 17%;
+    --ring: 142 76% 94%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom wave animation cho header và footer */
+@layer components {
+  .wave-bg {
+    background: linear-gradient(135deg, 
+      #f0fdf4 0%, 
+      #dcfce7 25%, 
+      #bbf7d0 50%, 
+      #86efac 75%, 
+      #4ade80 100%);
+    background-size: 400% 400%;
+    animation: wave-gradient 8s ease infinite;
+    height: 20px; /* Tăng từ 2px lên 20px (gấp 10 lần) */
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .wave-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z' fill='%23f0fdf4' fill-opacity='0.8'/%3E%3C/svg%3E") repeat-x;
+    background-size: 1200px 120px;
+    animation: wave-move 10s linear infinite;
+  }
+  
+  .wave-bg-dark {
+    background: linear-gradient(135deg, 
+      #14532d 0%, 
+      #166534 25%, 
+      #15803d 50%, 
+      #16a34a 75%, 
+      #22c55e 100%);
+    background-size: 400% 400%;
+    animation: wave-gradient 8s ease infinite;
+    height: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .wave-bg-dark::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z' fill='%2314532d' fill-opacity='0.8'/%3E%3C/svg%3E") repeat-x;
+    background-size: 1200px 120px;
+    animation: wave-move 10s linear infinite;
+  }
+  
+  @keyframes wave-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes wave-move {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-1200px); }
+  }
+  
+  /* Menu hover effects */
+  .menu-item {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .menu-item:hover {
+    @apply bg-green-50 text-green-700 shadow-sm;
+    transform: translateX(4px);
+  }
+  
+  .menu-item.active {
+    @apply bg-green-100 text-green-800 border-r-2 border-green-500;
+  }
+  
+  /* Button styles */
+  .btn-primary {
+    @apply bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply bg-green-100 hover:bg-green-200 text-green-800 font-medium px-4 py-2 rounded-lg transition-all duration-200;
+  }
+  
+  /* Card styles */
+  .card-green {
+    @apply bg-white border border-green-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .card-green-header {
+    @apply bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200 px-6 py-4 rounded-t-lg;
+  }
+  
+  /* Badge styles */
+  .badge-green {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800;
+  }
+  
+  .badge-green-dark {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-800 text-green-100;
+  }
+  
+  /* Alert styles */
+  .alert-green {
+    @apply bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg;
+  }
+  
+  .alert-green-icon {
+    @apply text-green-600;
+  }
+
+  /* Custom scrollbar styling cho AG Grid internal scrollbar */
+  .users-table-container .ag-body-horizontal-scroll::-webkit-scrollbar {
+    height: 8px;
+  }
+  .users-table-container .ag-body-horizontal-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+  .users-table-container .ag-body-horizontal-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+  .users-table-container .ag-body-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+  
+  /* Loại bỏ scrollbar dọc của AG Grid */
+  .users-table-container .ag-body-viewport {
+    overflow-y: hidden !important;
+  }
+  
+  /* Đảm bảo AG Grid tự xử lý scroll nội bộ */
+  .users-table-container .ag-body-horizontal-scroll {
+    display: block;
+  }
+  
+  /* Styling cho pinned columns */
+  .users-table-container .ag-pinned-right-cols-container,
+  .users-table-container .ag-pinned-left-cols-container {
+    background-color: white;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Cải thiện styling cho header */
+  .users-table-container .ag-header-cell-custom {
+    background-color: #f9fafb;
+    font-weight: 600;
+    font-size: 13px;
+    color: #374151;
+    padding: 12px 16px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  
+  /* Cải thiện styling cho các ô */
+  .users-table-container .ag-cell {
+    border-right: 1px solid #f3f4f6;
+    transition: background-color 0.15s ease;
+  }
+  
+  .users-table-container .ag-row:hover .ag-cell {
+    background-color: #f3f4f6;
+  }
+  
+  .users-table-container .ag-row-even {
+    background-color: #ffffff;
+  }
+  
+  .users-table-container .ag-row-odd {
+    background-color: #fafafa;
+  }
+  
+  /* Cải thiện typography */
+  .users-table-container .ag-cell-wrapper {
+    line-height: 1.6;
+  }
+  
+  /* Tăng contrast cho text */
+  .users-table-container .ag-cell-value {
+    color: #111827;
+  }
+  
+  /* Cải thiện màu icons */
+  .users-table-container .ag-cell svg {
+    opacity: 0.7;
+  }
+  
+  /* Cải thiện header contrast */
+  .users-table-container .ag-header-cell-custom {
+    color: #1f2937;
+    font-weight: 700;
+  }
+}

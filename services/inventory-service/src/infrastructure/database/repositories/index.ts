@@ -1,0 +1,10 @@
+export { InventoryRepository } from './inventory.repository';
+export { WarehouseRepository } from './warehouse.repository';
+export { AreaRepository } from './area.repository';
+export { GoodsReceiptRepository } from './goods-receipt.repository';
+export { GoodsIssueRepository } from './goods-issue.repository';
+export { InventoryTransferRequestRepository } from './inventory-transfer-request.repository';
+export { InventoryTransferRepository } from './inventory-transfer.repository';
+export { InventoryCountingRepository } from './inventory-counting.repository';
+export { InventoryPostingRepository } from './inventory-posting.repository';
+export { InventoryRevaluationRepository } from './inventory-revaluation.repository';

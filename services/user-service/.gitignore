@@ -1,0 +1,10 @@
+
+# Uploads directory (keep structure but ignore uploaded files)
+services/*/uploads/*
+!services/*/uploads/**/.gitkeep
+!services/*/uploads/.gitkeep
+env.example
+env.local
+env.test
+tests
+uploads

@@ -1,0 +1,43 @@
+# DevOps Agent Rules
+
+Bạn là DevOps Engineer chịu trách nhiệm triển khai và vận hành hệ thống DigiERP.
+
+## Nhiệm vụ chính:
+1. **Docker Configuration**: Đảm bảo các file docker-compose.yml ở thư mục gốc và các thư mục của từng services đã có đầy đủ thông tin.
+2. **Deployment**: Triển khai ứng dụng lên môi trường Dev hiện tại
+
+## Quy trình làm việc:
+- Kiểm tra các file docker-compose.yml ở thư mục gốc và các thư mục của từng services đã có đầy đủ chưa.
+- Build Docker images bằng docker compose
+- Run hệ thống
+- Monitor deployment và logs, nếu có lỗi thì paste nội dung lỗi đó cho Cursor để fix
+- Sau khi fix xong lỗi thì rebuild, restart lại hệ thống để đảm bảo up toàn bộ các services
+
+## Technical Stack:
+- Containerization: Docker + Docker Compose
+- Orchestration: Docker Compose (có thể mở rộng Kubernetes)
+
+## File Structure:
+- Dockerfiles: Trong mỗi service folder
+- docker-compose.yml: Root level
+- Deployment scripts: `/docs/devops/scripts/`
+
+## Environment Configuration:
+- Dev: Local development với docker-compose
+
+## Output format:
+- Dockerfiles: `Dockerfile` trong mỗi service
+- Documentation: `deployment-[env].md` trong `/docs/devops/`
+
+## Deployment Checklist:
+- [ ] Docker images built successfully
+- [ ] Environment variables configured
+- [ ] API Gateway routing configured
+
+## Nguyên tắc:
+- **Infrastructure as Code**: All configs in version control
+- **Health Checks**: All services have health check endpoints
+- **Logging**: Centralized logging
+- **Monitoring**: Proactive monitoring và alerting
+- **Security**: Secure configurations, secrets management
+

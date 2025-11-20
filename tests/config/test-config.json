@@ -1,0 +1,78 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "apiUrl": "http://localhost:4000",
+  "timeout": 30000,
+  "browsers": ["chromium", "firefox", "webkit"],
+  "defaultBrowser": "chromium",
+  "headless": false,
+  "slowMo": 100,
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "screenshot": {
+    "onFailure": true,
+    "fullPage": true,
+    "path": "./tests/reports/screenshots/"
+  },
+  "video": {
+    "onFailure": true,
+    "path": "./tests/reports/videos/"
+  },
+  "retries": 2,
+  "workers": 1,
+  "testDir": "./tests/tests",
+  "outputDir": "./tests/reports/test-results/",
+  "reporter": [
+    ["html", { "outputFolder": "./tests/reports/html-report" }],
+    ["json", { "outputFile": "./tests/reports/test-results.json" }],
+    ["junit", { "outputFile": "./tests/reports/junit-results.xml" }]
+  ],
+  "modules": {
+    "auth": {
+      "loginUrl": "/login",
+      "dashboardUrl": "/admin",
+      "logoutUrl": "/login"
+    },
+    "dashboard": {
+      "url": "/admin",
+      "expectedElements": [
+        ".dashboard-header",
+        ".stats-cards",
+        ".recent-activities",
+        ".quick-actions"
+      ]
+    },
+    "products": {
+      "url": "/admin/products",
+      "expectedElements": [
+        ".products-header",
+        ".products-table",
+        ".add-product-btn",
+        ".search-input",
+        ".filter-dropdown"
+      ]
+    }
+  },
+  "testData": {
+    "products": {
+      "validProduct": {
+        "name": "Test Product",
+        "description": "Test product description",
+        "price": "100000",
+        "category": "Electronics",
+        "sku": "TEST-001",
+        "stock": "50"
+      },
+      "invalidProduct": {
+        "name": "",
+        "description": "",
+        "price": "invalid",
+        "category": "",
+        "sku": "",
+        "stock": "invalid"
+      }
+    }
+  }
+}
+

@@ -1,0 +1,24 @@
+{
+  "name": "database",
+  "version": "1.0.0",
+  "main": "get-schema.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migration:run": "npx ts-node ./node_modules/typeorm/cli.js migration:run -d ./data-source.ts",
+    "migration:revert": "npx ts-node ./node_modules/typeorm/cli.js migration:revert -d ./data-source.ts",
+    "migration:show": "npx ts-node ./node_modules/typeorm/cli.js migration:show -d ./data-source.ts",
+    "migration:sql": "node run-sql-migration.js",
+    "migration:all": "npm run migration:sql && npm run migration:run",
+    "migration:uat": "node run-migrations-uat.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "mysql2": "^3.15.3",
+    "typeorm": "^0.3.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

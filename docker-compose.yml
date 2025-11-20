@@ -1,0 +1,326 @@
+services:
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: digierp-rabbitmq
+    env_file:
+      - .env.local
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - digierp-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: digierp-redis
+    env_file:
+      - .env.local
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - digierp-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: digierp-user-service
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${USER_SERVICE_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS}
+    ports:
+      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - digierp-network
+
+  # Product Service
+  product-service:
+    build:
+      context: ./services/product-service
+      dockerfile: Dockerfile
+    container_name: digierp-product-service
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PRODUCT_SERVICE_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS}
+    ports:
+      - "${PRODUCT_SERVICE_PORT}:${PRODUCT_SERVICE_PORT}"
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - digierp-network
+
+  # Sales Service
+  sales-service:
+    build:
+      context: ./services/sales-service
+      dockerfile: Dockerfile
+    container_name: digierp-sales-service
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${SALES_SERVICE_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      PRODUCT_SERVICE_URL: ${PRODUCT_SERVICE_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS}
+    ports:
+      - "${SALES_SERVICE_PORT}:${SALES_SERVICE_PORT}"
+    depends_on:
+      - rabbitmq
+      - product-service
+    networks:
+      - digierp-network
+
+  # Inventory Service
+  inventory-service:
+    build:
+      context: ./services/inventory-service
+      dockerfile: Dockerfile
+    container_name: digierp-inventory-service
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${INVENTORY_SERVICE_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS}
+    ports:
+      - "${INVENTORY_SERVICE_PORT}:${INVENTORY_SERVICE_PORT}"
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - digierp-network
+
+  # Purchase Service
+  purchase-service:
+    build:
+      context: ./services/purchase-service
+      dockerfile: Dockerfile
+    container_name: digierp-purchase-service
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PURCHASE_SERVICE_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS}
+    ports:
+      - "${PURCHASE_SERVICE_PORT}:${PURCHASE_SERVICE_PORT}"
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - digierp-network
+
+  # Financial Service
+  financial-service:
+    build:
+      context: ./services/financial-service
+      dockerfile: Dockerfile
+    container_name: digierp-financial-service
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${FINANCIAL_SERVICE_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS}
+    ports:
+      - "${FINANCIAL_SERVICE_PORT}:${FINANCIAL_SERVICE_PORT}"
+    depends_on:
+      - rabbitmq
+    networks:
+      - digierp-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: digierp-api-gateway
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${API_GATEWAY_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS}
+      USER_SERVICE_URL: ${USER_SERVICE_URL}
+      PRODUCT_SERVICE_URL: ${PRODUCT_SERVICE_URL}
+      SALES_SERVICE_URL: ${SALES_SERVICE_URL}
+      INVENTORY_SERVICE_URL: ${INVENTORY_SERVICE_URL}
+      PURCHASE_SERVICE_URL: ${PURCHASE_SERVICE_URL}
+      FINANCIAL_SERVICE_URL: ${FINANCIAL_SERVICE_URL}
+      CUSTOMER_SERVICE_URL: ${CUSTOMER_SERVICE_URL}
+      HR_SERVICE_URL: ${HR_SERVICE_URL}
+    ports:
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+    depends_on:
+      - user-service
+      - product-service
+      - sales-service
+      - inventory-service
+      - purchase-service
+      - financial-service
+      - customer-service
+      - hr-service
+    networks:
+      - digierp-network
+
+  # Customer Service
+  customer-service:
+    build:
+      context: ./services/customer-service
+      dockerfile: Dockerfile
+    container_name: digierp-customer-service
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${CUSTOMER_SERVICE_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS}
+    ports:
+      - "${CUSTOMER_SERVICE_PORT}:${CUSTOMER_SERVICE_PORT}"
+    depends_on:
+      - rabbitmq
+    networks:
+      - digierp-network
+
+  # HR Service
+  hr-service:
+    build:
+      context: ./services/hr-service
+      dockerfile: Dockerfile
+    container_name: digierp-hr-service
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${HR_SERVICE_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      USER_SERVICE_URL: ${USER_SERVICE_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS}
+    ports:
+      - "${HR_SERVICE_PORT}:${HR_SERVICE_PORT}"
+    depends_on:
+      - user-service
+    networks:
+      - digierp-network
+
+  # Admin Panel (Frontend)
+  admin-panel:
+    build:
+      context: ./apps/admin-panel
+      dockerfile: Dockerfile
+    container_name: digierp-admin-panel
+    env_file:
+      - .env.local
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    ports:
+      - "${ADMIN_PANEL_PORT}:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - digierp-network
+
+volumes:
+  rabbitmq_data:
+  redis_data:
+
+networks:
+  digierp-network:
+    driver: bridge

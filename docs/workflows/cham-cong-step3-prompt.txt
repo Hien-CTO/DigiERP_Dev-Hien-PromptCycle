@@ -1,0 +1,1 @@
+﻿Với vai trò database-engineer, hãy thực hiện: Thiết kế database schema và tạo migration scripts cho tính năng cham-cong

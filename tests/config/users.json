@@ -1,0 +1,138 @@
+{
+  "super_admin": {
+    "username": "admin",
+    "email": "admin@digierp.com",
+    "password": "admin123",
+    "firstName": "System",
+    "lastName": "Administrator",
+    "role": "super_admin",
+    "permissions": [
+      "user:create", "user:read", "user:update", "user:delete",
+      "product:create", "product:read", "product:update", "product:delete",
+      "order:create", "order:read", "order:update", "order:delete",
+      "inventory:create", "inventory:read", "inventory:update", "inventory:delete",
+      "warehouse:create", "warehouse:read", "warehouse:update", "warehouse:delete",
+      "goods_receipt:create", "goods_receipt:read", "goods_receipt:update", "goods_receipt:delete",
+      "goods_issue:create", "goods_issue:read", "goods_issue:update", "goods_issue:delete",
+      "supplier:create", "supplier:read", "supplier:update", "supplier:delete",
+      "purchase_order:create", "purchase_order:read", "purchase_order:update", "purchase_order:delete",
+      "invoice:create", "invoice:read", "invoice:update", "invoice:delete",
+      "payment:record", "report:sales", "report:inventory", "report:financial",
+      "system:admin"
+    ],
+    "expectedAccess": [
+      "/admin/users", "/admin/products", "/admin/inventory", "/admin/warehouses",
+      "/admin/purchase/orders", "/admin/sales/orders", "/admin/financial/invoices",
+      "/admin/reports", "/admin/settings"
+    ]
+  },
+  "admin": {
+    "username": "admin_user",
+    "email": "admin_user@digierp.com", 
+    "password": "admin123",
+    "firstName": "Admin",
+    "lastName": "User",
+    "role": "admin",
+    "permissions": [
+      "user:create", "user:read", "user:update",
+      "product:create", "product:read", "product:update", "product:delete",
+      "order:create", "order:read", "order:update", "order:delete",
+      "inventory:read", "inventory:update",
+      "warehouse:create", "warehouse:read", "warehouse:update", "warehouse:delete",
+      "goods_receipt:create", "goods_receipt:read", "goods_receipt:update", "goods_receipt:delete",
+      "goods_issue:create", "goods_issue:read", "goods_issue:update", "goods_issue:delete",
+      "supplier:create", "supplier:read", "supplier:update", "supplier:delete",
+      "purchase_order:create", "purchase_order:read", "purchase_order:update", "purchase_order:delete",
+      "invoice:create", "invoice:read", "invoice:update", "invoice:delete",
+      "payment:record", "report:sales", "report:inventory", "report:financial"
+    ],
+    "expectedAccess": [
+      "/admin/products", "/admin/inventory", "/admin/warehouses",
+      "/admin/purchase/orders", "/admin/sales/orders", "/admin/financial/invoices",
+      "/admin/reports"
+    ],
+    "restrictedAccess": [
+      "/admin/users", "/admin/settings"
+    ]
+  },
+  "manager": {
+    "username": "manager_user",
+    "email": "manager@digierp.com",
+    "password": "manager123",
+    "firstName": "Manager",
+    "lastName": "User",
+    "role": "manager",
+    "permissions": [
+      "product:read", "product:update",
+      "order:read", "order:update",
+      "inventory:read", "inventory:update",
+      "warehouse:read",
+      "goods_receipt:read", "goods_receipt:update",
+      "goods_issue:read", "goods_issue:update",
+      "supplier:read",
+      "purchase_order:read", "purchase_order:update",
+      "invoice:read",
+      "report:sales", "report:inventory"
+    ],
+    "expectedAccess": [
+      "/admin/products", "/admin/inventory", "/admin/warehouses",
+      "/admin/purchase/orders", "/admin/sales/orders", "/admin/financial/invoices",
+      "/admin/reports"
+    ],
+    "restrictedAccess": [
+      "/admin/users", "/admin/settings"
+    ]
+  },
+  "user": {
+    "username": "regular_user",
+    "email": "user@digierp.com",
+    "password": "user123",
+    "firstName": "Regular",
+    "lastName": "User",
+    "role": "user",
+    "permissions": [
+      "product:read",
+      "order:read",
+      "inventory:read",
+      "warehouse:read",
+      "goods_receipt:read",
+      "goods_issue:read",
+      "supplier:read",
+      "purchase_order:read",
+      "invoice:read"
+    ],
+    "expectedAccess": [
+      "/admin/products", "/admin/inventory", "/admin/warehouses",
+      "/admin/purchase/orders", "/admin/sales/orders", "/admin/financial/invoices"
+    ],
+    "restrictedAccess": [
+      "/admin/users", "/admin/settings", "/admin/reports"
+    ]
+  },
+  "viewer": {
+    "username": "viewer_user",
+    "email": "viewer@digierp.com",
+    "password": "viewer123",
+    "firstName": "Viewer",
+    "lastName": "User",
+    "role": "viewer",
+    "permissions": [
+      "product:read",
+      "order:read",
+      "inventory:read",
+      "warehouse:read",
+      "goods_receipt:read",
+      "goods_issue:read",
+      "supplier:read",
+      "purchase_order:read",
+      "invoice:read"
+    ],
+    "expectedAccess": [
+      "/admin/products", "/admin/inventory", "/admin/warehouses",
+      "/admin/purchase/orders", "/admin/sales/orders", "/admin/financial/invoices"
+    ],
+    "restrictedAccess": [
+      "/admin/users", "/admin/settings", "/admin/reports"
+    ]
+  }
+}

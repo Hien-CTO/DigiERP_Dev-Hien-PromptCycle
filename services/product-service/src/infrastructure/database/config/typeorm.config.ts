@@ -1,0 +1,50 @@
+import { TypeOrmModuleOptions } from "@nestjs/typeorm";
+import { ConfigService } from '@nestjs/config';
+import { ProductCategory, Product, ProductPrice, Material, Brand, FormulaProduct, Unit, StockStatus, ProductStatus, PackagingType } from "../entities";
+
+export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
+  type: "mysql",
+  host: configService.get<string>('DB_HOST')!,
+  port: configService.get<number>('DB_PORT')!,
+  username: configService.get<string>('DB_USERNAME')!,
+  password: configService.get<string>('DB_PASSWORD')!,
+  database: configService.get<string>('DB_DATABASE')!,
+  entities: [ProductCategory, Product, ProductPrice, Material, Brand, FormulaProduct, Unit, StockStatus, ProductStatus, PackagingType],
+  synchronize: false, // Disabled to prevent ALTER TABLE on startup
+  logging: configService.get<string>('NODE_ENV') === 'development',
+  migrations: ['dist/infrastructure/database/migrations/*.js'],
+  migrationsRun: false,
+  timezone: '+07:00',
+  charset: 'utf8mb4',
+  extra: {
+    connectionLimit: 10,
+  },
+  ssl:
+    configService.get<string>('NODE_ENV') === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
+});
+
+// Legacy export for migration scripts - uses environment variables from .env.local
+export const typeOrmConfig: TypeOrmModuleOptions = {
+  type: "mysql",
+  host: process.env.DB_HOST!,
+  port: parseInt(process.env.DB_PORT!),
+  username: process.env.DB_USERNAME!,
+  password: process.env.DB_PASSWORD!,
+  database: process.env.DB_DATABASE!,
+  entities: [ProductCategory, Product, ProductPrice, Material, Brand, FormulaProduct, Unit, StockStatus, ProductStatus, PackagingType],
+  synchronize: false, // Disabled to prevent ALTER TABLE on startup
+  logging: process.env.NODE_ENV === "development",
+  migrations: ["dist/infrastructure/database/migrations/*.js"],
+  migrationsRun: true,
+  timezone: '+07:00',
+  charset: 'utf8mb4',
+  extra: {
+    connectionLimit: 10,
+  },
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
+};

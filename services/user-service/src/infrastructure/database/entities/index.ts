@@ -1,0 +1,9 @@
+export { User } from './user.entity';
+export { Role } from './role.entity';
+export { Resource } from './resource.entity';
+export { Action } from './action.entity';
+export { Permission } from './permission.entity';
+export { UserRole } from './user-role.entity';
+export { RolePermission } from './role-permission.entity';
+export { Tenant } from './tenant.entity';
+export { UserTenant } from './user-tenant.entity';

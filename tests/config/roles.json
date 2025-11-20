@@ -1,0 +1,168 @@
+{
+  "roles": {
+    "super_admin": {
+      "name": "Super Administrator",
+      "description": "Full system access with all permissions",
+      "level": 1,
+      "isSystemRole": true,
+      "permissions": "ALL",
+      "canAccess": [
+        "user_management", "product_management", "order_management",
+        "inventory_management", "warehouse_management", "purchase_management",
+        "sales_management", "financial_management", "report_management",
+        "system_settings", "role_management", "permission_management"
+      ]
+    },
+    "admin": {
+      "name": "Administrator", 
+      "description": "Administrative access with most permissions",
+      "level": 2,
+      "isSystemRole": true,
+      "permissions": [
+        "user:create", "user:read", "user:update",
+        "product:create", "product:read", "product:update", "product:delete",
+        "order:create", "order:read", "order:update", "order:delete",
+        "inventory:read", "inventory:update",
+        "warehouse:create", "warehouse:read", "warehouse:update", "warehouse:delete",
+        "goods_receipt:create", "goods_receipt:read", "goods_receipt:update", "goods_receipt:delete",
+        "goods_issue:create", "goods_issue:read", "goods_issue:update", "goods_issue:delete",
+        "supplier:create", "supplier:read", "supplier:update", "supplier:delete",
+        "purchase_order:create", "purchase_order:read", "purchase_order:update", "purchase_order:delete",
+        "invoice:create", "invoice:read", "invoice:update", "invoice:delete",
+        "payment:record", "report:sales", "report:inventory", "report:financial"
+      ],
+      "canAccess": [
+        "product_management", "order_management", "inventory_management",
+        "warehouse_management", "purchase_management", "sales_management",
+        "financial_management", "report_management"
+      ],
+      "cannotAccess": [
+        "user_management", "system_settings", "role_management"
+      ]
+    },
+    "manager": {
+      "name": "Manager",
+      "description": "Management access with limited permissions",
+      "level": 3,
+      "isSystemRole": false,
+      "permissions": [
+        "product:read", "product:update",
+        "order:read", "order:update",
+        "inventory:read", "inventory:update",
+        "warehouse:read",
+        "goods_receipt:read", "goods_receipt:update",
+        "goods_issue:read", "goods_issue:update",
+        "supplier:read",
+        "purchase_order:read", "purchase_order:update",
+        "invoice:read",
+        "report:sales", "report:inventory"
+      ],
+      "canAccess": [
+        "product_management", "order_management", "inventory_management",
+        "warehouse_management", "purchase_management", "sales_management",
+        "financial_management", "report_management"
+      ],
+      "cannotAccess": [
+        "user_management", "system_settings", "role_management"
+      ]
+    },
+    "user": {
+      "name": "User",
+      "description": "Basic user access with read-only permissions",
+      "level": 4,
+      "isSystemRole": false,
+      "permissions": [
+        "product:read",
+        "order:read",
+        "inventory:read",
+        "warehouse:read",
+        "goods_receipt:read",
+        "goods_issue:read",
+        "supplier:read",
+        "purchase_order:read",
+        "invoice:read"
+      ],
+      "canAccess": [
+        "product_management", "order_management", "inventory_management",
+        "warehouse_management", "purchase_management", "sales_management",
+        "financial_management"
+      ],
+      "cannotAccess": [
+        "user_management", "system_settings", "role_management", "report_management"
+      ]
+    },
+    "viewer": {
+      "name": "Viewer",
+      "description": "Read-only access for viewing data",
+      "level": 5,
+      "isSystemRole": false,
+      "permissions": [
+        "product:read",
+        "order:read",
+        "inventory:read",
+        "warehouse:read",
+        "goods_receipt:read",
+        "goods_issue:read",
+        "supplier:read",
+        "purchase_order:read",
+        "invoice:read"
+      ],
+      "canAccess": [
+        "product_management", "order_management", "inventory_management",
+        "warehouse_management", "purchase_management", "sales_management",
+        "financial_management"
+      ],
+      "cannotAccess": [
+        "user_management", "system_settings", "role_management", "report_management"
+      ]
+    }
+  },
+  "permissions": {
+    "user": ["create", "read", "update", "delete"],
+    "product": ["create", "read", "update", "delete"],
+    "order": ["create", "read", "update", "delete"],
+    "inventory": ["create", "read", "update", "delete"],
+    "warehouse": ["create", "read", "update", "delete"],
+    "goods_receipt": ["create", "read", "update", "delete"],
+    "goods_issue": ["create", "read", "update", "delete"],
+    "supplier": ["create", "read", "update", "delete"],
+    "purchase_order": ["create", "read", "update", "delete"],
+    "invoice": ["create", "read", "update", "delete"],
+    "payment": ["record"],
+    "report": ["sales", "inventory", "financial"],
+    "system": ["admin"]
+  },
+  "testScenarios": {
+    "accessControl": {
+      "description": "Test access control for different roles",
+      "testCases": [
+        {
+          "role": "super_admin",
+          "shouldAccess": ["/admin/users", "/admin/settings", "/admin/products"],
+          "shouldNotAccess": []
+        },
+        {
+          "role": "admin", 
+          "shouldAccess": ["/admin/products", "/admin/inventory"],
+          "shouldNotAccess": ["/admin/users", "/admin/settings"]
+        },
+        {
+          "role": "manager",
+          "shouldAccess": ["/admin/products", "/admin/inventory"],
+          "shouldNotAccess": ["/admin/users", "/admin/settings"]
+        },
+        {
+          "role": "user",
+          "shouldAccess": ["/admin/products", "/admin/inventory"],
+          "shouldNotAccess": ["/admin/users", "/admin/settings", "/admin/reports"]
+        },
+        {
+          "role": "viewer",
+          "shouldAccess": ["/admin/products", "/admin/inventory"],
+          "shouldNotAccess": ["/admin/users", "/admin/settings", "/admin/reports"]
+        }
+      ]
+    }
+  }
+}
+

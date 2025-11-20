@@ -1,0 +1,43 @@
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  const logger = new Logger('FinancialService');
+
+  // Global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // CORS configuration
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: process.env.CORS_CREDENTIALS === 'true' || process.env.CORS_CREDENTIALS !== 'false',
+  });
+
+  // Swagger documentation
+  const config = new DocumentBuilder()
+    .setTitle('Financial Service API')
+    .setDescription('API for managing invoices and financial reports')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/v1/docs', app, document);
+
+  const port = process.env.PORT || 3005;
+  await app.listen(port);
+  
+  logger.log(`Financial Service is running on: http://localhost:${port}`);
+  logger.log(`Swagger documentation: http://localhost:${port}/api/v1/docs`);
+}
+
+bootstrap();
