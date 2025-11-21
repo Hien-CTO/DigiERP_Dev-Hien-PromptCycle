@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   Index,
 } from 'typeorm';
@@ -56,9 +57,17 @@ export class LeaveRequest {
   reason: string;
 
   // Phê duyệt
-  @Column({ type: 'int', nullable: true, comment: 'FK to employees.id - Người duyệt' })
+  @Column({ type: 'int', nullable: true, comment: 'FK to employees.id - Manager phê duyệt' })
   @Index('idx_approver_id')
   approver_id: number;
+
+  @Column({ type: 'int', nullable: true, comment: 'FK to employees.id - HR Manager phê duyệt' })
+  @Index('idx_hr_approver_id')
+  hr_approver_id: number;
+
+  @Column({ type: 'boolean', default: false, comment: 'Yêu cầu phê duyệt từ HR Manager' })
+  @Index('idx_requires_hr_approval')
+  requires_hr_approval: boolean;
 
   @Column({
     type: 'enum',
@@ -68,14 +77,32 @@ export class LeaveRequest {
   @Index('idx_status')
   status: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true, comment: 'Deprecated, dùng manager_approved_at/hr_approved_at' })
   approved_at: Date;
 
   @Column({ type: 'timestamp', nullable: true })
   rejected_at: Date;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, comment: 'Deprecated, dùng manager_rejection_reason/hr_rejection_reason' })
   rejection_reason: string;
+
+  @Column({ type: 'timestamp', nullable: true, comment: 'Thời gian Manager phê duyệt' })
+  manager_approved_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true, comment: 'Thời gian HR Manager phê duyệt' })
+  hr_approved_at: Date;
+
+  @Column({ type: 'text', nullable: true, comment: 'Lý do Manager từ chối' })
+  manager_rejection_reason: string;
+
+  @Column({ type: 'text', nullable: true, comment: 'Lý do HR Manager từ chối' })
+  hr_rejection_reason: string;
+
+  @Column({ type: 'text', nullable: true, comment: 'Ghi chú từ Manager' })
+  manager_notes: string;
+
+  @Column({ type: 'text', nullable: true, comment: 'Ghi chú từ HR Manager' })
+  hr_notes: string;
 
   // File đính kèm
   @Column({ type: 'text', nullable: true })
@@ -84,6 +111,31 @@ export class LeaveRequest {
   // Ghi chú
   @Column({ type: 'text', nullable: true })
   notes: string;
+
+  // Edit tracking
+  @Column({ type: 'boolean', default: false, comment: 'Đã được chỉnh sửa' })
+  @Index('idx_is_edited')
+  is_edited: boolean;
+
+  @Column({ type: 'timestamp', nullable: true, comment: 'Thời gian chỉnh sửa' })
+  edited_at: Date;
+
+  @Column({ type: 'int', nullable: true, comment: 'FK to users.id - Người chỉnh sửa' })
+  @Index('idx_edited_by')
+  edited_by: number;
+
+  @Column({ type: 'text', nullable: true, comment: 'Lý do chỉnh sửa' })
+  edit_reason: string;
+
+  // Cancellation
+  @Column({ type: 'text', nullable: true, comment: 'Lý do hủy' })
+  cancellation_reason: string;
+
+  @Column({ type: 'timestamp', nullable: true, comment: 'Thời gian hủy' })
+  cancelled_at: Date;
+
+  @Column({ type: 'int', nullable: true, comment: 'FK to users.id - Người hủy' })
+  cancelled_by: number;
 
   // Audit
   @CreateDateColumn({ type: 'timestamp' })
@@ -106,6 +158,10 @@ export class LeaveRequest {
   @ManyToOne(() => Employee, { nullable: true })
   @JoinColumn({ name: 'approver_id' })
   approver: Employee;
+
+  @ManyToOne(() => Employee, { nullable: true })
+  @JoinColumn({ name: 'hr_approver_id' })
+  hrApprover: Employee;
 
   @ManyToOne(() => CatLeaveTypes, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'leave_type_id' })

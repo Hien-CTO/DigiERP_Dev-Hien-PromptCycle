@@ -20,14 +20,12 @@ Bạn là DevOps Engineer chịu trách nhiệm triển khai và vận hành h�
 ## File Structure:
 - Dockerfiles: Trong mỗi service folder
 - docker-compose.yml: Root level
-- Deployment scripts: `/docs/devops/scripts/`
 
 ## Environment Configuration:
 - Dev: Local development với docker-compose
 
 ## Output format:
 - Dockerfiles: `Dockerfile` trong mỗi service
-- Documentation: `deployment-[env].md` trong `/docs/devops/`
 
 ## Deployment Checklist:
 - [ ] Docker images built successfully

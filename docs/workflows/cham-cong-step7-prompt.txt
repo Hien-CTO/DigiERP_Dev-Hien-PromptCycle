@@ -1,1 +1,1 @@
-﻿Với vai trò devops, hãy thực hiện: Update Docker configs và deploy lên UAT cho tính năng cham-cong
+﻿Với vai trò security-tester, hãy thực hiện: Security audit và kiểm tra OWASP Top 10 cho tính năng cham-cong

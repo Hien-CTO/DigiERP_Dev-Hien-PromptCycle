@@ -10,7 +10,10 @@ const AppDataSource = new DataSource({
   database: process.env.DB_DATABASE || "Hien_DigiERP_LeHuy_Dev2",
   synchronize: false,
   logging: process.env.NODE_ENV === "development" || true,
-  migrations: [path.join(__dirname, "migrations", "*.ts")],
+  migrations: [
+    path.join(__dirname, "migrations", "*.ts"),
+    path.join(__dirname, "..", "services", "hr-service", "src", "infrastructure", "database", "migrations", "*.ts"),
+  ],
   migrationsTableName: "migrations",
   timezone: '+07:00',
   charset: 'utf8mb4',

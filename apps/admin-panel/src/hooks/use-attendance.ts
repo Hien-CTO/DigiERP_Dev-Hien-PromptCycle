@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import apiClient from '@/lib/api';
+import { attendanceApi } from '@/lib/api/attendance.api';
 import {
   AttendanceRecord,
   AttendanceListResponse,
@@ -17,21 +17,7 @@ export const useAttendanceRecords = (query: GetAttendanceQuery = {}) => {
 
   return useQuery<AttendanceListResponse>({
     queryKey: ['attendance-records', page, limit, dateFrom, dateTo, status],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      params.append('page', page.toString());
-      params.append('limit', limit.toString());
-      if (dateFrom) {
-        params.append('dateFrom', dateFrom);
-      }
-      if (dateTo) {
-        params.append('dateTo', dateTo);
-      }
-      if (status) {
-        params.append('status', status);
-      }
-      return apiClient.get(`/api/hr/attendance?${params.toString()}`);
-    },
+    queryFn: () => attendanceApi.getMyAttendance({ page, limit, dateFrom, dateTo, status }),
   });
 };
 
@@ -44,9 +30,11 @@ export const useTodayAttendance = () => {
     queryFn: async () => {
       try {
         const today = new Date().toISOString().split('T')[0];
-        const response = await apiClient.get<AttendanceListResponse>(
-          `/api/hr/attendance?dateFrom=${today}&dateTo=${today}&limit=1`
-        );
+        const response = await attendanceApi.getMyAttendance({
+          dateFrom: today,
+          dateTo: today,
+          limit: 1,
+        });
         return response.records?.[0] || null;
       } catch (error) {
         // Nếu không có record hôm nay, trả về null
@@ -62,7 +50,7 @@ export const useTodayAttendance = () => {
 export const useAttendanceRecord = (id: number) => {
   return useQuery<AttendanceRecord>({
     queryKey: ['attendance-record', id],
-    queryFn: () => apiClient.get(`/api/hr/attendance/${id}`),
+    queryFn: () => attendanceApi.getAttendanceById(id),
     enabled: !!id,
   });
 };
@@ -73,17 +61,7 @@ export const useAttendanceRecord = (id: number) => {
 export const useAttendanceStats = (dateFrom?: string, dateTo?: string) => {
   return useQuery<AttendanceStats>({
     queryKey: ['attendance-stats', dateFrom, dateTo],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      if (dateFrom) {
-        params.append('dateFrom', dateFrom);
-      }
-      if (dateTo) {
-        params.append('dateTo', dateTo);
-      }
-      const queryString = params.toString();
-      return apiClient.get(`/api/hr/attendance/stats${queryString ? `?${queryString}` : ''}`);
-    },
+    queryFn: () => attendanceApi.getStats({ dateFrom, dateTo }),
   });
 };
 
@@ -94,7 +72,7 @@ export const useCheckIn = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CheckInRequest) => apiClient.post('/api/hr/attendance/check-in', data),
+    mutationFn: (data: CheckInRequest) => attendanceApi.checkIn(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance-today'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
@@ -110,12 +88,21 @@ export const useCheckOut = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CheckOutRequest) => apiClient.post('/api/hr/attendance/check-out', data),
+    mutationFn: (data: CheckOutRequest) => attendanceApi.checkOut(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance-today'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
     },
+  });
+};
+
+/**
+ * Hook để export attendance data
+ */
+export const useExportAttendance = () => {
+  return useMutation({
+    mutationFn: (query: GetAttendanceQuery) => attendanceApi.exportAttendance(query),
   });
 };
 

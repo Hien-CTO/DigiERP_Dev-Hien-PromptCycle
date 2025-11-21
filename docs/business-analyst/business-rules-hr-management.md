@@ -345,40 +345,299 @@ Module HR Management bao gồm:
 
 **Rule ID**: BR-HR-007  
 **Priority**: High  
-**Category**: Leave Management
+**Category**: Leave Management  
+**Related Feature**: FEAT-008-006
 
-**Description**: Quy tắc quản lý nghỉ phép.
+**Description**: Quy tắc quản lý nghỉ phép với nhiều loại nghỉ, approval workflow, và tự động tính toán leave balance.
 
 **Rules**:
-1. Mỗi nhân viên có leave balance cho từng loại nghỉ phép
+
+**BR-LEAVE-001: Leave Balance Management**
+1. Mỗi nhân viên có leave balance cho từng loại nghỉ phép (per leave type)
 2. Leave balance được tính dựa trên:
    - Loại hợp đồng (Full-time có nhiều ngày nghỉ hơn Part-time)
-   - Thâm niên làm việc
-   - Chính sách công ty
-3. Leave request phải được approve bởi Manager trước khi có hiệu lực
-4. Không được request nghỉ phép trong quá khứ (trừ trường hợp đặc biệt với approval của HR Manager)
-5. Không được request nghỉ phép vượt quá leave balance
-6. Leave request có status: Pending → Approved/Rejected → Taken/Cancelled
-7. Khi leave request được approve, leave balance tự động trừ đi
-8. Khi leave request bị reject hoặc cancel, leave balance được hoàn lại
-9. Leave request có thể được chỉnh sửa hoặc hủy trước khi được approve
+   - Thâm niên làm việc (tenure)
+   - Chính sách công ty (company policy)
+   - Position level (có thể có entitlements khác nhau)
+3. Leave balance bao gồm:
+   - Current balance (entitlement)
+   - Used balance (từ approved leave requests)
+   - Pending balance (từ pending leave requests)
+   - Remaining balance = Current - Used - Pending
+4. Leave balance được tự động cập nhật khi:
+   - Leave request được approve (trừ balance)
+   - Leave request bị reject hoặc cancel (hoàn lại balance)
+   - Leave entitlements được tính toán (thêm balance)
+   - Leave expires (trừ balance)
 
-**Leave Types và Rules**:
-- **Annual Leave**: Có balance, cần approval, có thể chuyển sang năm sau (tối đa 5 ngày)
-- **Sick Leave**: Có balance, cần giấy bác sĩ nếu > 3 ngày, cần approval
-- **Unpaid Leave**: Không có balance, cần approval, không ảnh hưởng đến lương
-- **Maternity Leave**: Chỉ cho nữ, có balance riêng (6 tháng), cần approval
-- **Paternity Leave**: Chỉ cho nam, có balance riêng (5-10 ngày), cần approval
+**BR-LEAVE-002: Leave Request Creation**
+1. Employee chỉ có thể tạo leave request nếu:
+   - Employee status = Active
+   - Employee có quyền CREATE_LEAVE_REQUEST
+2. Leave request phải có:
+   - Leave type (required)
+   - Start date (required)
+   - End date (required)
+   - Reason/notes (optional nhưng recommended)
+3. Start date phải >= current date (trừ trường hợp đặc biệt với HR approval)
+4. End date phải >= start date
+5. Leave days được tính toán tự động:
+   - Leave days = (end_date - start_date) + 1
+   - Trừ weekends và holidays (theo company policy)
+6. Hệ thống validate leave balance:
+   - Nếu leave type có balance (Annual, Sick, Maternity, Paternity):
+     - Remaining balance >= leave days requested
+   - Nếu leave type không có balance (Unpaid, Emergency):
+     - Không cần kiểm tra balance
+7. Hệ thống kiểm tra overlap với existing leave requests:
+   - Không được overlap với approved leave requests
+   - Có thể overlap với pending leave requests (cảnh báo)
+8. Leave request status mặc định = PENDING sau khi tạo
+
+**BR-LEAVE-003: Leave Types và Rules**
+1. **Annual Leave** (Nghỉ phép năm):
+   - Có balance (dựa trên contract type và tenure)
+   - Cần approval từ Manager
+   - Có thể carry-over sang năm sau (tối đa 5 ngày, configurable)
+   - Balance expires nếu không sử dụng (theo policy)
+2. **Sick Leave** (Nghỉ ốm):
+   - Có balance (standard entitlement per year, configurable)
+   - Cần approval từ Manager
+   - Requires medical certificate nếu > 3 days (configurable)
+   - Balance có thể không expire (theo policy)
+3. **Unpaid Leave** (Nghỉ không lương):
+   - Không có balance (unlimited)
+   - Cần approval từ Manager
+   - Không ảnh hưởng đến lương (no salary during leave)
+4. **Maternity Leave** (Nghỉ thai sản):
+   - Chỉ dành cho nữ (gender restriction)
+   - Có balance riêng (6 tháng, configurable)
+   - Cần approval từ Manager/HR Manager
+   - Paid leave
+5. **Paternity Leave** (Nghỉ khi vợ sinh):
+   - Chỉ dành cho nam (gender restriction)
+   - Có balance riêng (5-10 ngày, configurable)
+   - Cần approval từ Manager
+   - Paid leave
+6. **Emergency Leave** (Nghỉ khẩn cấp):
+   - Không có balance (unlimited)
+   - Unpaid leave
+   - Cần approval từ Manager
+   - For emergencies only
+7. **Other** (Loại nghỉ khác):
+   - Custom leave types
+   - Rules configurable by HR Manager
+
+**BR-LEAVE-004: Leave Request Approval Workflow**
+1. Leave request phải được approve bởi Manager trước khi có hiệu lực
+2. Manager chỉ có thể approve leave requests của employees trong department của mình
+3. HR Manager có thể approve leave requests của tất cả employees
+4. Manager không thể approve leave request của chính mình (phải chuyển lên cấp trên hoặc HR Manager)
+5. Khi approve:
+   - Manager có thể nhập approval notes (optional)
+   - Hệ thống cập nhật status = APPROVED
+   - Hệ thống trừ leave balance (nếu leave type có balance)
+   - Hệ thống tạo attendance records (nếu integrated)
+   - Hệ thống gửi notification cho Employee
+6. Khi reject:
+   - Manager phải nhập rejection reason (required)
+   - Hệ thống cập nhật status = REJECTED
+   - Hệ thống không trừ leave balance
+   - Hệ thống gửi notification cho Employee với rejection reason
+7. Manager có thể bulk approve multiple leave requests cùng lúc
+8. Hệ thống kiểm tra team coverage trước khi approve:
+   - Nếu approving leave sẽ gây insufficient coverage (configurable threshold):
+     - Hệ thống cảnh báo Manager
+     - Manager có thể approve anyway hoặc reject
+
+**BR-LEAVE-005: Leave Request Edit và Cancel**
+1. Employee chỉ có thể edit leave request nếu:
+   - Status = PENDING hoặc APPROVED
+   - Start date >= current date (chưa được taken)
+2. Employee có thể edit:
+   - Leave dates (start_date, end_date)
+   - Leave type
+   - Reason/notes
+   - Attached documents
+3. Khi edit leave request đã approved:
+   - Employee phải nhập edit reason (required)
+   - Hệ thống restore original leave balance
+   - Hệ thống recalculate new leave balance
+   - Status tự động chuyển về PENDING (cần approval lại)
+4. Employee có thể cancel leave request nếu:
+   - Status = PENDING hoặc APPROVED
+   - Start date >= current date
+5. Khi cancel leave request đã approved:
+   - Hệ thống restore leave balance (hoàn lại)
+   - Hệ thống update attendance records (nếu integrated)
+6. Tất cả edits và cancellations phải được log trong audit trail:
+   - Old values
+   - New values
+   - Edit/cancel reason
+   - Timestamp
+   - Editor (employee user_id)
+
+**BR-LEAVE-006: Leave Entitlements Calculation**
+1. Hệ thống tự động tính toán leave entitlements dựa trên:
+   - Employee contract type (Full-time, Part-time, Contract, Intern)
+   - Employee tenure (years of service)
+   - Company policy và regulations
+   - Employee position level
+2. Leave entitlements được tính toán:
+   - Tự động tại đầu mỗi năm (scheduled job)
+   - Khi employee mới join (prorated entitlements)
+   - Khi employee contract type thay đổi
+   - Khi employee tenure thay đổi (anniversary)
+3. Prorated entitlements cho new employees:
+   - Entitlement = (Full entitlement * Remaining months) / 12
+   - Tính từ join date đến cuối năm
+4. Leave accrual rules:
+   - Monthly accrual: Entitlement được cộng dần mỗi tháng
+   - Quarterly accrual: Entitlement được cộng mỗi quý
+   - Yearly accrual: Entitlement được cộng một lần vào đầu năm
+5. Leave carry-over rules:
+   - Annual Leave có thể carry-over tối đa 5 ngày (configurable)
+   - Unused leave vượt quá carry-over limit sẽ expire
+   - Carry-over balance expires vào cuối năm sau (configurable)
+6. Leave expiration rules:
+   - Một số leave types có expiration date
+   - Unused leave sẽ expire nếu không sử dụng trước expiration date
+   - Hệ thống tự động expire leave balance (scheduled job)
+
+**BR-LEAVE-007: Leave History và Viewing**
+1. Employee chỉ có thể xem leave history của chính mình
+2. Manager có thể xem leave history của employees trong department
+3. HR Manager có thể xem leave history của tất cả employees
+4. Leave history bao gồm:
+   - Leave requests với dates, types, days, status
+   - Approval/rejection history (who, when, reason)
+   - Edit history (nếu có)
+   - Leave balance changes over time
+5. Leave history có thể được filter by:
+   - Date range
+   - Leave type
+   - Status (Pending, Approved, Rejected, Cancelled)
+6. Leave history có thể được sort by:
+   - Date (newest/oldest)
+   - Leave type
+   - Status
+7. Leave history có thể được export to Excel/CSV
+
+**BR-LEAVE-008: Manager Leave Dashboard**
+1. Manager có thể xem leave dashboard cho team (employees in department)
+2. Dashboard hiển thị:
+   - Pending leave requests count (highlight)
+   - Upcoming leave (next 30/60/90 days)
+   - Current leave status (who is on leave now)
+   - Leave calendar view (all team leave)
+   - Leave statistics by leave type
+3. Manager có thể filter by:
+   - Employee
+   - Date range
+   - Leave type
+4. Hệ thống alert Manager nếu:
+   - Multiple employees request leave on same dates (coverage conflict)
+   - Insufficient team coverage (configurable threshold)
+5. Manager có thể export leave calendar
+
+**BR-LEAVE-009: HR Manager Leave Overview**
+1. HR Manager có thể xem leave overview cho toàn bộ organization
+2. Overview bao gồm:
+   - Total employees
+   - Employees on leave (current)
+   - Pending leave requests (organization-wide)
+   - Leave utilization statistics
+3. HR Manager có thể generate reports:
+   - By department
+   - By position
+   - By employee
+   - By date range
+4. Reports bao gồm:
+   - Leave utilization statistics
+   - Leave balance analysis
+   - Unusual patterns (frequent sick leave, excessive annual leave)
+   - Leave forecast (projected usage)
+5. Reports có thể export to Excel, PDF, CSV
+
+**BR-LEAVE-010: Leave Types Configuration**
+1. HR Manager có quyền configure leave types
+2. Leave type configuration bao gồm:
+   - Name, code, description
+   - Max days per year
+   - Carry-over rules (max days, expiration)
+   - Requires approval (yes/no)
+   - Requires medical certificate (if > X days)
+   - Gender restriction (if applicable)
+3. Leave entitlements configuration:
+   - By contract type (Full-time, Part-time, etc.)
+   - By tenure (years of service)
+   - By position level
+4. Approval workflow configuration:
+   - Single-level (Manager only)
+   - Multi-level (Manager → HR Manager)
+5. Other rules configuration:
+   - Minimum notice period
+   - Maximum consecutive days
+   - Blackout dates (dates when leave is not allowed)
+   - Accrual rules (monthly, quarterly, yearly)
+6. Configuration phải được validate:
+   - Max days >= 0
+   - Carry-over <= max days
+   - All required fields filled
+7. Configuration history được maintain (audit trail)
+
+**BR-LEAVE-011: Integration with Attendance System**
+1. Khi leave request được approve:
+   - Hệ thống tự động mark attendance records as LEAVE cho leave period
+   - Prevent check-in/check-out trên leave days
+2. Khi leave request bị cancel:
+   - Hệ thống remove LEAVE marks từ attendance records
+   - Allow check-in/check-out again
+3. Khi leave request được edit (dates changed):
+   - Hệ thống update LEAVE marks trong attendance records
+4. Attendance records phải sync real-time với leave status
+5. Hệ thống validate leave dates không conflict với attendance records
+
+**BR-LEAVE-012: Leave Request Notifications**
+1. Hệ thống gửi notification khi:
+   - Leave request được tạo (gửi cho Manager)
+   - Leave request được approve (gửi cho Employee)
+   - Leave request bị reject (gửi cho Employee với reason)
+   - Leave request được edit/cancel (gửi cho Manager)
+2. Hệ thống gửi reminder notifications:
+   - Before leave start date (e.g., 1 day before)
+   - If leave request pending > X days (configurable)
+   - If leave balance low (< 3 days)
+   - If leave balance about to expire (within 30 days)
+3. Notifications được gửi qua:
+   - Email
+   - In-app notifications
+4. Users có thể configure notification preferences
 
 **Validation Rules**:
 - Start date <= End date
-- Leave days = End date - Start date + 1 (tính cả ngày cuối)
-- Leave balance phải >= Leave days requested
+- Leave days = (End date - Start date) + 1 (trừ weekends/holidays theo policy)
+- Leave balance phải >= Leave days requested (cho paid leave types)
+- Employee status phải = Active để tạo leave request
+- Leave request không được overlap với approved leave requests
+- Rejection reason phải có khi reject (minimum 10 characters)
+- Edit reason phải có khi edit approved request
 
 **Exception Handling**:
-- Nếu leave balance không đủ, hệ thống từ chối request và hiển thị balance hiện tại
-- Nếu request nghỉ phép trùng với ngày đã có request khác, hệ thống cảnh báo
-- Nếu request nghỉ phép trong quá khứ, hệ thống yêu cầu approval đặc biệt
+- Nếu leave balance không đủ: Hệ thống từ chối request và hiển thị balance hiện tại, shortage amount
+- Nếu request nghỉ phép trùng với ngày đã có request khác: Hệ thống cảnh báo và hiển thị overlapping requests, yêu cầu xác nhận
+- Nếu request nghỉ phép trong quá khứ: Hệ thống yêu cầu approval đặc biệt từ HR Manager
+- Nếu sick leave > 3 days không có medical certificate: Hệ thống yêu cầu upload medical certificate
+- Nếu leave type yêu cầu giới tính cụ thể (Maternity/Paternity): Hệ thống validate employee gender và từ chối nếu không match
+- Nếu Manager approve own leave request: Hệ thống từ chối và đề xuất chuyển lên cấp trên
+- Nếu approving leave gây insufficient team coverage: Hệ thống cảnh báo và yêu cầu xác nhận
+- Nếu leave request đã được taken (start_date < current_date): Không thể edit/cancel, chỉ có thể tạo request mới
+
+**Integration Rules**:
+- Leave requests phải integrate với User Service để authenticate employee
+- Approved leave requests phải integrate với Attendance Service để mark leave days
+- Leave balance phải sync với Financial Service cho payroll calculation (planned)
+- Leave data phải sync real-time với attendance system
 
 ---
 

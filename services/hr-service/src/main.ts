@@ -7,10 +7,23 @@ import helmet from 'helmet';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { AppDataSource } from './infrastructure/database/config/data-source';
+import { ensureAdminEmployee } from './infrastructure/database/scripts/ensure-admin-employee';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
+
+  // Ensure admin employee record exists on startup
+  try {
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+    await ensureAdminEmployee(AppDataSource);
+  } catch (error) {
+    console.warn('⚠️  Could not ensure admin employee record:', error.message);
+    // Continue startup even if this fails
+  }
 
   // Security middleware
   app.use(helmet({

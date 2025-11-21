@@ -1,0 +1,1 @@
+﻿Với vai trò fullstack-developer, hãy thực hiện: Implement backend (NestJS) và frontend (Next.js) cho tính năng nghi-phep

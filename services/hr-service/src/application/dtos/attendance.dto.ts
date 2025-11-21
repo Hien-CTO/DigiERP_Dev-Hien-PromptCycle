@@ -5,7 +5,6 @@ import {
   IsNotEmpty,
   MinLength,
   MaxLength,
-  Matches,
   IsEnum,
   IsNumber,
 } from 'class-validator';
@@ -20,10 +19,23 @@ export class CheckInDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  @Matches(/^[a-zA-Z0-9\s,.-]+$/, {
-    message: 'Location contains invalid characters',
-  })
   location?: string;
+
+  @ApiPropertyOptional({
+    description: 'GPS Latitude',
+    example: 21.0285,
+  })
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @ApiPropertyOptional({
+    description: 'GPS Longitude',
+    example: 105.8542,
+  })
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
 
   @ApiPropertyOptional({
     description: 'Reason for late check-in',
@@ -36,6 +48,32 @@ export class CheckInDto {
 }
 
 export class CheckOutDto {
+  @ApiPropertyOptional({
+    description: 'Location (GPS or address)',
+    maxLength: 255,
+    example: '123 Main St, Hanoi',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  location?: string;
+
+  @ApiPropertyOptional({
+    description: 'GPS Latitude',
+    example: 21.0285,
+  })
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @ApiPropertyOptional({
+    description: 'GPS Longitude',
+    example: 105.8542,
+  })
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
   @ApiPropertyOptional({
     description: 'Reason for early leave',
     maxLength: 500,
@@ -143,8 +181,8 @@ export class AttendanceResponseDto {
   @ApiPropertyOptional()
   check_out_time?: Date;
 
-  @ApiProperty()
-  break_time: number;
+  @ApiPropertyOptional()
+  break_time?: number;
 
   @ApiPropertyOptional()
   working_hours?: number;
@@ -202,6 +240,39 @@ export class AttendanceResponseDto {
 
   @ApiPropertyOptional()
   location?: string;
+
+  @ApiPropertyOptional()
+  check_in_location?: string;
+
+  @ApiPropertyOptional()
+  check_in_latitude?: number;
+
+  @ApiPropertyOptional()
+  check_in_longitude?: number;
+
+  @ApiPropertyOptional()
+  check_out_location?: string;
+
+  @ApiPropertyOptional()
+  check_out_latitude?: number;
+
+  @ApiPropertyOptional()
+  check_out_longitude?: number;
+
+  @ApiPropertyOptional()
+  special_case_type?: string;
+
+  @ApiPropertyOptional()
+  is_edited?: boolean;
+
+  @ApiPropertyOptional()
+  edited_at?: Date;
+
+  @ApiPropertyOptional()
+  edited_by?: number;
+
+  @ApiPropertyOptional()
+  approval_notes?: string;
 
   @ApiProperty()
   created_at: Date;

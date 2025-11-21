@@ -36,8 +36,8 @@ export class AttendanceRecord {
   @Column({ type: 'datetime', nullable: true, comment: 'Thời gian check-out' })
   check_out_time: Date;
 
-  @Column({ type: 'decimal', precision: 4, scale: 2, default: 1.0, comment: 'Thời gian nghỉ (giờ)' })
-  break_time: number;
+  @Column({ type: 'int', default: 0, comment: 'Thời gian nghỉ (phút)' })
+  break_duration_minutes: number;
 
   // Tính toán
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, comment: 'Số giờ làm việc' })
@@ -69,17 +69,26 @@ export class AttendanceRecord {
   // Loại chấm công
   @Column({
     type: 'enum',
-    enum: ['NORMAL', 'OVERTIME', 'HOLIDAY', 'WEEKEND'],
-    default: 'NORMAL',
+    enum: ['WORK', 'OVERTIME', 'LEAVE', 'HOLIDAY', 'ABSENT', 'SICK', 'REMOTE_WORK', 'BUSINESS_TRIP', 'OTHER'],
+    default: 'WORK',
     comment: 'Loại chấm công',
   })
   @Index('idx_type')
   type: string;
 
+  @Column({
+    type: 'enum',
+    enum: ['NORMAL', 'REMOTE_WORK', 'BUSINESS_TRIP', 'HOLIDAY_WORK', 'WEEKEND_WORK'],
+    default: 'NORMAL',
+    comment: 'Loại trường hợp đặc biệt',
+  })
+  @Index('idx_special_case_type')
+  special_case_type: string;
+
   // Trạng thái chấm công
   @Column({
     type: 'enum',
-    enum: ['CHECKED_IN', 'COMPLETED', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED'],
+    enum: ['CHECKED_IN', 'COMPLETED', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CANCELLED'],
     default: 'CHECKED_IN',
     comment: 'Trạng thái chấm công',
   })
@@ -116,12 +125,44 @@ export class AttendanceRecord {
   @Column({ type: 'text', nullable: true, comment: 'Lý do chỉnh sửa' })
   edit_reason: string;
 
+  @Column({ type: 'tinyint', default: 0, comment: 'Đã được chỉnh sửa' })
+  @Index('idx_is_edited')
+  is_edited: boolean;
+
+  @Column({ type: 'timestamp', nullable: true, comment: 'Thời gian chỉnh sửa' })
+  edited_at: Date;
+
+  @Column({ type: 'int', nullable: true, comment: 'FK to users.id - Người chỉnh sửa' })
+  @Index('idx_edited_by')
+  edited_by: number;
+
+  @Column({ type: 'text', nullable: true, comment: 'Ghi chú khi phê duyệt/từ chối' })
+  approval_notes: string;
+
   // Ghi chú
   @Column({ type: 'text', nullable: true })
   notes: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true, comment: 'Địa điểm chấm công (GPS, địa chỉ)' })
+  @Column({ type: 'varchar', length: 255, nullable: true, comment: 'Địa điểm chấm công (deprecated, dùng check_in_location/check_out_location)' })
   location: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, comment: 'Địa điểm check-in (GPS hoặc địa chỉ)' })
+  check_in_location: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true, comment: 'Vĩ độ GPS check-in' })
+  check_in_latitude: number;
+
+  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true, comment: 'Kinh độ GPS check-in' })
+  check_in_longitude: number;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, comment: 'Địa điểm check-out (GPS hoặc địa chỉ)' })
+  check_out_location: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true, comment: 'Vĩ độ GPS check-out' })
+  check_out_latitude: number;
+
+  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true, comment: 'Kinh độ GPS check-out' })
+  check_out_longitude: number;
 
   // Audit
   @CreateDateColumn({ type: 'timestamp' })

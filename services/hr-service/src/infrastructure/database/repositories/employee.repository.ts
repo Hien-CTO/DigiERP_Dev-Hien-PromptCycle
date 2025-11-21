@@ -17,6 +17,13 @@ export class EmployeeRepository {
     });
   }
 
+  async findByUserId(userId: number): Promise<Employee | null> {
+    return await this.employeeRepository.findOne({
+      where: { user_id: userId },
+      relations: ['department', 'position', 'manager', 'status', 'contractType'],
+    });
+  }
+
   async findByEmployeeCode(employeeCode: string): Promise<Employee | null> {
     return await this.employeeRepository.findOne({
       where: { employee_code: employeeCode },

@@ -1,1 +1,1 @@
-﻿Với vai trò automation-tester, hãy thực hiện: Viết Playwright E2E tests và chạy test reports cho tính năng cham-cong
+﻿Với vai trò devops, hãy thực hiện: Update Docker configs và deploy lên UAT cho tính năng cham-cong

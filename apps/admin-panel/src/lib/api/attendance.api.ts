@@ -19,14 +19,14 @@ export const attendanceApi = {
    * Employee check-in
    */
   checkIn: async (data: CheckInRequest): Promise<AttendanceRecord> => {
-    return await api.post<AttendanceRecord>('/api/v1/attendance/check-in', data);
+    return await api.post<AttendanceRecord>('/api/hr/attendance/check-in', data);
   },
 
   /**
    * Employee check-out
    */
   checkOut: async (data: CheckOutRequest): Promise<AttendanceRecord> => {
-    return await api.post<AttendanceRecord>('/api/v1/attendance/check-out', data);
+    return await api.post<AttendanceRecord>('/api/hr/attendance/check-out', data);
   },
 
   /**
@@ -41,7 +41,7 @@ export const attendanceApi = {
     if (query?.status) params.append('status', query.status);
 
     const queryString = params.toString();
-    const url = `/api/v1/attendance/my-attendance${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/hr/attendance/my-attendance${queryString ? `?${queryString}` : ''}`;
     
     return await api.get<AttendanceListResponse>(url);
   },
@@ -58,7 +58,7 @@ export const attendanceApi = {
     if (query?.status) params.append('status', query.status);
 
     const queryString = params.toString();
-    const url = `/api/v1/attendance/department${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/hr/attendance/department${queryString ? `?${queryString}` : ''}`;
     
     return await api.get<AttendanceListResponse>(url);
   },
@@ -72,7 +72,7 @@ export const attendanceApi = {
     if (query?.limit) params.append('limit', query.limit.toString());
 
     const queryString = params.toString();
-    const url = `/api/v1/attendance/pending-approvals${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/hr/attendance/pending-approvals${queryString ? `?${queryString}` : ''}`;
     
     return await api.get<AttendanceListResponse>(url);
   },
@@ -81,28 +81,58 @@ export const attendanceApi = {
    * Get attendance record by ID
    */
   getAttendanceById: async (id: number): Promise<AttendanceRecord> => {
-    return await api.get<AttendanceRecord>(`/api/v1/attendance/${id}`);
+    return await api.get<AttendanceRecord>(`/api/hr/attendance/${id}`);
   },
 
   /**
    * Edit attendance record
    */
   editAttendance: async (id: number, data: EditAttendanceRequest): Promise<AttendanceRecord> => {
-    return await api.put<AttendanceRecord>(`/api/v1/attendance/${id}`, data);
+    return await api.put<AttendanceRecord>(`/api/hr/attendance/${id}`, data);
   },
 
   /**
    * Approve attendance record
    */
   approveAttendance: async (id: number, data?: ApproveAttendanceRequest): Promise<AttendanceRecord> => {
-    return await api.put<AttendanceRecord>(`/api/v1/attendance/${id}/approve`, data || {});
+    return await api.put<AttendanceRecord>(`/api/hr/attendance/${id}/approve`, data || {});
   },
 
   /**
    * Reject attendance record
    */
   rejectAttendance: async (id: number, data: RejectAttendanceRequest): Promise<AttendanceRecord> => {
-    return await api.put<AttendanceRecord>(`/api/v1/attendance/${id}/reject`, data);
+    return await api.put<AttendanceRecord>(`/api/hr/attendance/${id}/reject`, data);
+  },
+
+  /**
+   * Get attendance statistics
+   */
+  getStats: async (query?: GetAttendanceQuery): Promise<any> => {
+    const params = new URLSearchParams();
+    if (query?.dateFrom) params.append('dateFrom', query.dateFrom);
+    if (query?.dateTo) params.append('dateTo', query.dateTo);
+
+    const queryString = params.toString();
+    const url = `/api/hr/attendance/stats${queryString ? `?${queryString}` : ''}`;
+    
+    return await api.get<any>(url);
+  },
+
+  /**
+   * Export attendance data
+   */
+  exportAttendance: async (query: GetAttendanceQuery): Promise<any> => {
+    const params = new URLSearchParams();
+    if (query.dateFrom) params.append('dateFrom', query.dateFrom);
+    if (query.dateTo) params.append('dateTo', query.dateTo);
+    if (query.status) params.append('status', query.status);
+    if (query.format) params.append('format', query.format);
+
+    const queryString = params.toString();
+    const url = `/api/hr/attendance/export${queryString ? `?${queryString}` : ''}`;
+    
+    return await api.get<any>(url);
   },
 };
 

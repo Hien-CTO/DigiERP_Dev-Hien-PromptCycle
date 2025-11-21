@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ClockIn, MapPin } from 'lucide-react';
+import { Clock, MapPin } from 'lucide-react';
 import { GreenButton } from '@/components/ui/green-button';
 import { useCheckIn, useTodayAttendance } from '@/hooks/use-attendance';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -43,7 +43,7 @@ export const CheckInButton: React.FC<CheckInButtonProps> = ({ className }) => {
   if (isLoadingToday) {
     return (
       <GreenButton disabled className={className}>
-        <ClockIn className="mr-2 h-4 w-4" />
+        <Clock className="mr-2 h-4 w-4" />
         Đang tải...
       </GreenButton>
     );
@@ -52,7 +52,7 @@ export const CheckInButton: React.FC<CheckInButtonProps> = ({ className }) => {
   if (isCheckedIn) {
     return (
       <GreenButton disabled variant="secondary" className={className}>
-        <ClockIn className="mr-2 h-4 w-4" />
+        <Clock className="mr-2 h-4 w-4" />
         Đã check-in
       </GreenButton>
     );
@@ -61,7 +61,7 @@ export const CheckInButton: React.FC<CheckInButtonProps> = ({ className }) => {
   if (isCompleted) {
     return (
       <GreenButton disabled variant="secondary" className={className}>
-        <ClockIn className="mr-2 h-4 w-4" />
+        <Clock className="mr-2 h-4 w-4" />
         Đã hoàn thành hôm nay
       </GreenButton>
     );
@@ -72,7 +72,7 @@ export const CheckInButton: React.FC<CheckInButtonProps> = ({ className }) => {
       <GreenButton
         onClick={() => setIsDialogOpen(true)}
         className={className}
-        icon={<ClockIn className="h-4 w-4" />}
+        icon={<Clock className="h-4 w-4" />}
       >
         Check-in
       </GreenButton>

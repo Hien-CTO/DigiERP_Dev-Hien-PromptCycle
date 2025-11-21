@@ -8,8 +8,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AttendanceRepository } from '@/infrastructure/database/repositories/attendance.repository';
+import { AttendanceEditHistoryRepository } from '@/infrastructure/database/repositories/attendance-edit-history.repository';
+import { AttendanceConfigurationRepository } from '@/infrastructure/database/repositories/attendance-configuration.repository';
+import { AttendanceLocationRepository } from '@/infrastructure/database/repositories/attendance-location.repository';
 import { EmployeeRepository } from '@/infrastructure/database/repositories/employee.repository';
 import { AttendanceRecord } from '@/infrastructure/database/entities/attendance-record.entity';
+import { AttendanceEditHistory } from '@/infrastructure/database/entities/attendance-edit-history.entity';
+import { AttendanceConfiguration } from '@/infrastructure/database/entities/attendance-configuration.entity';
 import { Employee } from '@/infrastructure/database/entities/employee.entity';
 import {
   CheckInDto,
@@ -22,13 +27,12 @@ import {
 @Injectable()
 export class AttendanceService {
   private readonly logger = new Logger(AttendanceService.name);
-  private readonly STANDARD_WORKING_HOURS = 8;
-  private readonly BREAK_TIME = 1;
-  private readonly LATE_THRESHOLD_HOUR = 9;
-  private readonly EARLY_LEAVE_THRESHOLD_HOUR = 17;
 
   constructor(
     private readonly attendanceRepository: AttendanceRepository,
+    private readonly attendanceEditHistoryRepository: AttendanceEditHistoryRepository,
+    private readonly attendanceConfigurationRepository: AttendanceConfigurationRepository,
+    private readonly attendanceLocationRepository: AttendanceLocationRepository,
     private readonly employeeRepository: EmployeeRepository,
   ) {}
 
@@ -36,60 +40,127 @@ export class AttendanceService {
    * Employee check-in
    */
   async checkIn(employeeId: number, dto: CheckInDto, userId: number): Promise<AttendanceRecord> {
-    // 1. Validate employee exists and is active
-    const employee = await this.employeeRepository.findById(employeeId);
-    if (!employee) {
-      throw new NotFoundException('Employee not found');
-    }
-    if (!employee.is_active) {
-      throw new BadRequestException('Employee is not active');
-    }
+    try {
+      // 1. Validate employee exists and is active
+      const employee = await this.employeeRepository.findById(employeeId);
+      if (!employee) {
+        this.logger.error(`Employee not found: ${employeeId}`);
+        throw new NotFoundException('Employee not found');
+      }
+      if (!employee.is_active) {
+        this.logger.error(`Employee is not active: ${employeeId}`);
+        throw new BadRequestException('Employee is not active');
+      }
 
-    // 2. Check if already checked in today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+      // 2. Get configuration for employee
+      const config = await this.attendanceConfigurationRepository.getConfigurationForEmployee(
+        employee.department_id || undefined,
+        employee.position_id || undefined,
+      );
+      if (!config) {
+        this.logger.error(`Attendance configuration not found for employee ${employeeId} (dept: ${employee.department_id}, pos: ${employee.position_id})`);
+        throw new BadRequestException('Attendance configuration not found');
+      }
+
+      // 3. Check if already checked in today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const existing = await this.attendanceRepository.findTodayByEmployee(employeeId);
+      if (existing) {
+        this.logger.warn(`Employee ${employeeId} already checked in today`);
+        throw new BadRequestException('Already checked in today');
+      }
+
+      // 4. Validate check-in time
+      const checkInTime = new Date();
+      const earliestCheckIn = this.parseTimeString(config.earliest_check_in_time);
+      if (checkInTime < earliestCheckIn) {
+        this.logger.warn(`Check-in too early for employee ${employeeId}: ${checkInTime.toISOString()} < ${config.earliest_check_in_time}`);
+        throw new BadRequestException(`Check-in too early (before ${config.earliest_check_in_time})`);
+      }
+
+      // 5. Validate GPS location if enabled
+      if (config.location_validation_enabled && dto.latitude && dto.longitude) {
+        const locationValidation = await this.attendanceLocationRepository.isLocationValid(
+          dto.latitude,
+          dto.longitude,
+          config.allowed_location_radius_meters,
+        );
+        if (!locationValidation.valid) {
+          this.logger.warn(`Check-in location invalid for employee ${employeeId}`);
+          throw new BadRequestException('Check-in location is outside allowed area');
+        }
+      }
+
+      // 6. Calculate late status
+      const lateThreshold = this.parseTimeString(config.late_threshold_time);
+      const isLate = checkInTime > lateThreshold;
+      const lateMinutes = isLate
+        ? Math.floor((checkInTime.getTime() - lateThreshold.getTime()) / 60000)
+        : 0;
+
+      // 7. Create attendance record
+      const attendance = await this.attendanceRepository.create({
+        employee_id: employeeId,
+        attendance_date: today,
+        check_in_time: checkInTime,
+        check_in_location: dto.location,
+        check_in_latitude: dto.latitude,
+        check_in_longitude: dto.longitude,
+        location: dto.location, // Keep for backward compatibility
+        late: isLate,
+        late_minutes: lateMinutes,
+        late_reason: isLate && dto.lateReason ? dto.lateReason : null,
+        status: isLate ? 'PENDING_APPROVAL' : 'CHECKED_IN',
+        approval_status: isLate ? 'PENDING' : 'PENDING',
+        type: 'WORK',
+        special_case_type: 'NORMAL',
+        break_duration_minutes: config.break_duration_minutes,
+        overtime_hours: 0,
+        created_by: userId,
+        updated_by: userId,
+      });
+
+      this.logger.log(`Check-in successful: Employee ${employeeId} at ${checkInTime.toISOString()}`);
+
+      return attendance;
+    } catch (error) {
+      this.logger.error(`Error in checkIn for employee ${employeeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Parse time string (HH:mm:ss) or Date object to Date object for today
+   */
+  private parseTimeString(timeString: string | Date | null | undefined): Date {
+    if (!timeString) {
+      this.logger.warn('parseTimeString received null/undefined, using default 09:00:00');
+      timeString = '09:00:00';
+    }
     
-    const existing = await this.attendanceRepository.findTodayByEmployee(employeeId);
-    if (existing) {
-      throw new BadRequestException('Already checked in today');
-    }
-
-    // 3. Validate check-in time (not too early - after 6 AM)
-    const checkInTime = new Date();
-    const currentHour = checkInTime.getHours();
-    if (currentHour < 6) {
-      throw new BadRequestException('Check-in too early (before 6 AM)');
-    }
-
-    // 4. Calculate late status
-    const lateThreshold = new Date(checkInTime);
-    lateThreshold.setHours(this.LATE_THRESHOLD_HOUR, 0, 0, 0);
+    let timeStr: string;
     
-    const isLate = checkInTime > lateThreshold;
-    const lateMinutes = isLate
-      ? Math.floor((checkInTime.getTime() - lateThreshold.getTime()) / 60000)
-      : 0;
-
-    // 5. Create attendance record
-    const attendance = await this.attendanceRepository.create({
-      employee_id: employeeId,
-      attendance_date: today,
-      check_in_time: checkInTime,
-      location: dto.location,
-      late: isLate,
-      late_minutes: lateMinutes,
-      late_reason: isLate && dto.lateReason ? dto.lateReason : null,
-      status: 'CHECKED_IN',
-      type: 'NORMAL',
-      break_time: this.BREAK_TIME,
-      overtime_hours: 0,
-      created_by: userId,
-      updated_by: userId,
-    });
-
-    this.logger.log(`Check-in successful: Employee ${employeeId} at ${checkInTime.toISOString()}`);
-
-    return attendance;
+    if (timeString instanceof Date) {
+      // If it's already a Date, extract time string
+      const hours = timeString.getHours().toString().padStart(2, '0');
+      const minutes = timeString.getMinutes().toString().padStart(2, '0');
+      const seconds = timeString.getSeconds().toString().padStart(2, '0');
+      timeStr = `${hours}:${minutes}:${seconds}`;
+    } else {
+      timeStr = String(timeString);
+    }
+    
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) {
+      this.logger.error(`Invalid time string format: ${timeStr}, using default 09:00:00`);
+      return this.parseTimeString('09:00:00');
+    }
+    
+    const date = new Date();
+    date.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+    return date;
   }
 
   /**
@@ -109,37 +180,77 @@ export class AttendanceService {
       throw new BadRequestException('Already checked out today');
     }
 
-    // 2. Validate check-out time
+    // 2. Get configuration
+    const employee = await this.employeeRepository.findById(employeeId);
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+    const config = await this.attendanceConfigurationRepository.getConfigurationForEmployee(
+      employee.department_id,
+      employee.position_id,
+    );
+    if (!config) {
+      throw new BadRequestException('Attendance configuration not found');
+    }
+
+    // 3. Validate check-out time
     const checkOutTime = new Date();
     if (checkOutTime <= record.check_in_time) {
       throw new BadRequestException('Check-out time must be after check-in time');
     }
 
-    // 3. Calculate working hours
+    const latestCheckOut = this.parseTimeString(config.latest_check_out_time);
+    if (checkOutTime > latestCheckOut) {
+      throw new BadRequestException(`Check-out too late (after ${config.latest_check_out_time})`);
+    }
+
+    // 4. Validate GPS location if enabled
+    if (config.location_validation_enabled && dto.latitude && dto.longitude) {
+      const locationValidation = await this.attendanceLocationRepository.isLocationValid(
+        dto.latitude,
+        dto.longitude,
+        config.allowed_location_radius_meters,
+      );
+      if (!locationValidation.valid) {
+        throw new BadRequestException('Check-out location is outside allowed area');
+      }
+    }
+
+    // 5. Calculate working hours
     const diffMs = checkOutTime.getTime() - record.check_in_time.getTime();
     const totalHours = diffMs / (1000 * 60 * 60);
-    const workingHours = Math.max(0, totalHours - record.break_time);
+    const breakHours = config.break_duration_minutes / 60;
+    const workingHours = Math.max(0, totalHours - breakHours);
 
-    // 4. Calculate overtime
-    const overtimeHours = Math.max(0, workingHours - this.STANDARD_WORKING_HOURS);
+    // Validate working hours (safety limit: 0-16 hours)
+    if (workingHours < 0) {
+      throw new BadRequestException('Invalid working hours (negative)');
+    }
+    if (workingHours > 16) {
+      throw new BadRequestException('Working hours exceed safety limit (16 hours)');
+    }
 
-    // 5. Check early leave
-    const earlyLeaveThreshold = new Date(checkOutTime);
-    earlyLeaveThreshold.setHours(this.EARLY_LEAVE_THRESHOLD_HOUR, 0, 0, 0);
-    
+    // 6. Calculate overtime
+    const overtimeHours = Math.max(0, workingHours - Number(config.standard_working_hours));
+
+    // 7. Check early leave
+    const earlyLeaveThreshold = this.parseTimeString(config.early_leave_threshold_time);
     const isEarlyLeave = checkOutTime < earlyLeaveThreshold;
     const earlyLeaveMinutes = isEarlyLeave
       ? Math.floor((earlyLeaveThreshold.getTime() - checkOutTime.getTime()) / 60000)
       : 0;
 
-    // 6. Determine status (needs approval if late or early leave)
+    // 8. Determine status (needs approval if late or early leave)
     const needsApproval = record.late || isEarlyLeave;
     const status = needsApproval ? 'PENDING_APPROVAL' : 'COMPLETED';
     const approvalStatus = needsApproval ? 'PENDING' : 'APPROVED';
 
-    // 7. Update record
+    // 9. Update record
     const updated = await this.attendanceRepository.update(record.id, {
       check_out_time: checkOutTime,
+      check_out_location: dto.location,
+      check_out_latitude: dto.latitude,
+      check_out_longitude: dto.longitude,
       working_hours: workingHours,
       overtime_hours: overtimeHours,
       early_leave: isEarlyLeave,
@@ -251,6 +362,19 @@ export class AttendanceService {
       throw new BadRequestException('Cannot edit approved attendance record');
     }
 
+    // Get configuration
+    const employee = await this.employeeRepository.findById(employeeId);
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+    const config = await this.attendanceConfigurationRepository.getConfigurationForEmployee(
+      employee.department_id,
+      employee.position_id,
+    );
+    if (!config) {
+      throw new BadRequestException('Attendance configuration not found');
+    }
+
     // Validate times
     const checkInTime = new Date(dto.checkInTime);
     const checkOutTime = new Date(dto.checkOutTime);
@@ -259,30 +383,83 @@ export class AttendanceService {
       throw new BadRequestException('Check-out time must be after check-in time');
     }
 
+    // Track changes for edit history
+    const changes: Partial<AttendanceEditHistory>[] = [];
+
     // Recalculate
     const diffMs = checkOutTime.getTime() - checkInTime.getTime();
     const totalHours = diffMs / (1000 * 60 * 60);
-    const workingHours = Math.max(0, totalHours - record.break_time);
-    const overtimeHours = Math.max(0, workingHours - this.STANDARD_WORKING_HOURS);
+    const breakHours = config.break_duration_minutes / 60;
+    const workingHours = Math.max(0, totalHours - breakHours);
+    const overtimeHours = Math.max(0, workingHours - Number(config.standard_working_hours));
+
+    // Track field changes
+    if (record.check_in_time.getTime() !== checkInTime.getTime()) {
+      changes.push({
+        attendance_record_id: id,
+        field_name: 'check_in_time',
+        old_value: record.check_in_time.toISOString(),
+        new_value: checkInTime.toISOString(),
+        edit_reason: dto.editReason,
+        edited_by: userId,
+      });
+    }
+
+    if (record.check_out_time && record.check_out_time.getTime() !== checkOutTime.getTime()) {
+      changes.push({
+        attendance_record_id: id,
+        field_name: 'check_out_time',
+        old_value: record.check_out_time.toISOString(),
+        new_value: checkOutTime.toISOString(),
+        edit_reason: dto.editReason,
+        edited_by: userId,
+      });
+    }
 
     // Recalculate late/early leave
-    const lateThreshold = new Date(checkInTime);
-    lateThreshold.setHours(this.LATE_THRESHOLD_HOUR, 0, 0, 0);
+    const lateThreshold = this.parseTimeString(config.late_threshold_time);
     const isLate = checkInTime > lateThreshold;
     const lateMinutes = isLate
       ? Math.floor((checkInTime.getTime() - lateThreshold.getTime()) / 60000)
       : 0;
 
-    const earlyLeaveThreshold = new Date(checkOutTime);
-    earlyLeaveThreshold.setHours(this.EARLY_LEAVE_THRESHOLD_HOUR, 0, 0, 0);
+    const earlyLeaveThreshold = this.parseTimeString(config.early_leave_threshold_time);
     const isEarlyLeave = checkOutTime < earlyLeaveThreshold;
     const earlyLeaveMinutes = isEarlyLeave
       ? Math.floor((earlyLeaveThreshold.getTime() - checkOutTime.getTime()) / 60000)
       : 0;
 
+    // Track other field changes
+    if (record.late !== isLate) {
+      changes.push({
+        attendance_record_id: id,
+        field_name: 'late',
+        old_value: String(record.late),
+        new_value: String(isLate),
+        edit_reason: dto.editReason,
+        edited_by: userId,
+      });
+    }
+
+    if (record.early_leave !== isEarlyLeave) {
+      changes.push({
+        attendance_record_id: id,
+        field_name: 'early_leave',
+        old_value: String(record.early_leave),
+        new_value: String(isEarlyLeave),
+        edit_reason: dto.editReason,
+        edited_by: userId,
+      });
+    }
+
     const needsApproval = isLate || isEarlyLeave;
     const status = needsApproval ? 'PENDING_APPROVAL' : 'COMPLETED';
     const approvalStatus = needsApproval ? 'PENDING' : 'APPROVED';
+
+    // Save edit history
+    if (changes.length > 0) {
+      await this.attendanceEditHistoryRepository.createMultiple(changes);
+    }
 
     // Update record
     const updated = await this.attendanceRepository.update(record.id, {
@@ -295,6 +472,9 @@ export class AttendanceService {
       early_leave: isEarlyLeave,
       early_leave_minutes: earlyLeaveMinutes,
       edit_reason: dto.editReason,
+      is_edited: true,
+      edited_at: new Date(),
+      edited_by: userId,
       status,
       approval_status: approvalStatus,
       updated_by: userId,

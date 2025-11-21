@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ClockOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { GreenButton } from '@/components/ui/green-button';
 import { useCheckOut, useTodayAttendance } from '@/hooks/use-attendance';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -38,7 +38,7 @@ export const CheckOutButton: React.FC<CheckOutButtonProps> = ({ className }) => 
   if (isLoadingToday) {
     return (
       <GreenButton disabled className={className}>
-        <ClockOut className="mr-2 h-4 w-4" />
+        <LogOut className="mr-2 h-4 w-4" />
         Đang tải...
       </GreenButton>
     );
@@ -47,7 +47,7 @@ export const CheckOutButton: React.FC<CheckOutButtonProps> = ({ className }) => 
   if (!canCheckOut) {
     return (
       <GreenButton disabled variant="secondary" className={className}>
-        <ClockOut className="mr-2 h-4 w-4" />
+        <LogOut className="mr-2 h-4 w-4" />
         {todayAttendance?.check_out_time ? 'Đã check-out' : 'Chưa check-in'}
       </GreenButton>
     );
@@ -59,7 +59,7 @@ export const CheckOutButton: React.FC<CheckOutButtonProps> = ({ className }) => 
         onClick={() => setIsDialogOpen(true)}
         variant="outline"
         className={className}
-        icon={<ClockOut className="h-4 w-4" />}
+        icon={<LogOut className="h-4 w-4" />}
       >
         Check-out
       </GreenButton>

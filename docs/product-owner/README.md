@@ -33,6 +33,8 @@ Mỗi Epic có một file riêng với thông tin chi tiết:
 #### Enhancement Epics (Medium Priority)
 - **[Epic: Analytics & Business Intelligence](./epic-analytics-bi.md)** (EPIC-007)
 - **[Epic: HR Management](./epic-hr-management.md)** (EPIC-008)
+  - **[Feature: Attendance Management (Chấm Công)](./feature-attendance-management.md)** (FEAT-008-005)
+  - **[Feature: Leave Management (Nghỉ Phép)](./feature-leave-management.md)** (FEAT-008-006)
 
 ## 📖 Cách Sử Dụng Tài Liệu
 
@@ -91,9 +93,7 @@ Mỗi Epic document bao gồm:
 
 ## 📚 Tài Liệu Tham Khảo
 
-- **BRD**: [BRD-Overall_v4.md](../../BRD-Overall_v4.md) - Business Requirements Document
-- **Database Design**: [Database-Architect_v4.md](../../Database-Architect_v4.md) - Database schema và design
-- **Technical Architecture**: [Technical-Architecture_v4.md](../../Technical-Architecture_v4.md) - Kiến trúc kỹ thuật
+- **BRD**: [BRD-Overall_v4.md](../reference_rules/BRD-Overall_v4.md) - Business Requirements Document
 
 ## 🤝 Liên Hệ
 

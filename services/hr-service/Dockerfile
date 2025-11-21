@@ -2,6 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install wget for health checks
+RUN apk add --no-cache wget
+
 # Configure npm for better network handling and SSL certificate issues
 ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 RUN npm config set strict-ssl false && \
@@ -20,6 +23,10 @@ COPY . .
 RUN npm run build
 
 EXPOSE 3008
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3008/api/v1/health || exit 1
 
 CMD ["npm", "run", "start:prod"]
 

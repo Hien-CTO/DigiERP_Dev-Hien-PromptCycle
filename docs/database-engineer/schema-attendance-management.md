@@ -1,24 +1,28 @@
-# Database Schema - Attendance Management (Chấm Công)
+# Database Schema: Attendance Management (Chấm Công)
 
 ## 📋 Tổng Quan
 
-**Epic**: EPIC-008 - HR Management  
-**Feature**: FEAT-008-005 - Attendance Management (Chấm Công)  
-**Document Version**: 1.0  
-**Last Updated**: November 2025  
-**Author**: Database Engineer
+**Module**: HR Management - Attendance Management  
+**Feature ID**: FEAT-008-005  
+**Database**: `Hien_DigiERP_LeHuy_Dev2`  
+**Version**: 1.0  
+**Last Updated**: November 2025
 
-Tài liệu này mô tả database schema cho tính năng Chấm Công (Attendance Management) của hệ thống DigiERP.
+Tài liệu này mô tả database schema cho tính năng Attendance Management (Chấm Công), bao gồm:
+- Core tables cho attendance tracking
+- Audit trail và edit history
+- Configuration tables cho rules và policies
+- Location tracking với GPS support
 
 ---
 
-## 🗄️ Database Tables
+## 🗂️ Database Tables
 
 ### 1. attendance_records
 
-**Purpose**: Lưu trữ bản ghi chấm công hàng ngày của nhân viên
+**Mục đích**: Lưu trữ bản ghi chấm công hàng ngày của nhân viên
 
-**Table Name**: `attendance_records`
+**Primary Key**: `id` (INT, AUTO_INCREMENT)
 
 **Columns**:
 
@@ -28,378 +32,433 @@ Tài liệu này mô tả database schema cho tính năng Chấm Công (Attendan
 | employee_id | INT | NO | - | FK to employees.id |
 | attendance_date | DATE | NO | - | Ngày chấm công |
 | attendance_type_id | INT | YES | NULL | FK to cat_attendance_types.id |
-| check_in_time | DATETIME | NO | - | Thời gian check-in |
+| check_in_time | DATETIME | YES | NULL | Thời gian check-in |
 | check_out_time | DATETIME | YES | NULL | Thời gian check-out |
-| location | VARCHAR(255) | YES | NULL | Địa điểm chấm công (GPS/address) |
-| break_time | DECIMAL(4,2) | NO | 1.0 | Thời gian nghỉ (giờ) |
-| working_hours | DECIMAL(5,2) | YES | NULL | Tổng giờ làm việc (tính toán) |
-| overtime_hours | DECIMAL(5,2) | NO | 0.00 | Giờ làm thêm (tính toán) |
-| late | BOOLEAN | NO | false | Có đi muộn không |
+| break_duration_minutes | INT | NO | 0 | Thời gian nghỉ (phút) |
+| working_hours | DECIMAL(5,2) | YES | NULL | Số giờ làm việc (tự động tính) |
+| overtime_hours | DECIMAL(5,2) | NO | 0 | Số giờ làm thêm |
 | late_minutes | INT | NO | 0 | Số phút đi muộn |
-| late_reason | TEXT | YES | NULL | Lý do đi muộn |
-| early_leave | BOOLEAN | NO | false | Có về sớm không |
 | early_leave_minutes | INT | NO | 0 | Số phút về sớm |
+| late_reason | TEXT | YES | NULL | Lý do đi muộn |
 | early_leave_reason | TEXT | YES | NULL | Lý do về sớm |
-| type | ENUM | NO | 'NORMAL' | Loại chấm công: NORMAL, OVERTIME, HOLIDAY, WEEKEND |
-| status | ENUM | NO | 'CHECKED_IN' | Trạng thái: CHECKED_IN, COMPLETED, PENDING_APPROVAL, APPROVED, REJECTED |
-| approval_status | ENUM | NO | 'PENDING' | Trạng thái phê duyệt: PENDING, APPROVED, REJECTED |
+| edit_reason | TEXT | YES | NULL | Lý do chỉnh sửa |
+| is_edited | TINYINT(1) | NO | 0 | Đã được chỉnh sửa |
+| edited_at | TIMESTAMP | YES | NULL | Thời gian chỉnh sửa |
+| edited_by | INT | YES | NULL | FK to users.id - Người chỉnh sửa |
+| type | ENUM | NO | 'WORK' | Loại chấm công: WORK, OVERTIME, LEAVE, HOLIDAY, ABSENT, SICK, REMOTE_WORK, BUSINESS_TRIP, OTHER |
+| special_case_type | ENUM | NO | 'NORMAL' | Loại trường hợp đặc biệt: NORMAL, REMOTE_WORK, BUSINESS_TRIP, HOLIDAY_WORK, WEEKEND_WORK |
+| status | ENUM | NO | 'CHECKED_IN' | Trạng thái: CHECKED_IN, COMPLETED, PENDING_APPROVAL, APPROVED, REJECTED, CANCELLED |
 | approved_by | INT | YES | NULL | FK to users.id - Người phê duyệt |
 | approved_at | TIMESTAMP | YES | NULL | Thời gian phê duyệt |
-| rejected_by | INT | YES | NULL | FK to users.id - Người từ chối |
-| rejected_at | TIMESTAMP | YES | NULL | Thời gian từ chối |
 | rejection_reason | TEXT | YES | NULL | Lý do từ chối |
-| edit_reason | TEXT | YES | NULL | Lý do chỉnh sửa |
+| approval_notes | TEXT | YES | NULL | Ghi chú khi phê duyệt/từ chối |
+| location | VARCHAR(255) | YES | NULL | Địa điểm chấm công (deprecated, dùng check_in_location/check_out_location) |
+| check_in_location | VARCHAR(255) | YES | NULL | Địa điểm check-in (GPS hoặc địa chỉ) |
+| check_in_latitude | DECIMAL(10,8) | YES | NULL | Vĩ độ GPS check-in |
+| check_in_longitude | DECIMAL(11,8) | YES | NULL | Kinh độ GPS check-in |
+| check_out_location | VARCHAR(255) | YES | NULL | Địa điểm check-out (GPS hoặc địa chỉ) |
+| check_out_latitude | DECIMAL(10,8) | YES | NULL | Vĩ độ GPS check-out |
+| check_out_longitude | DECIMAL(11,8) | YES | NULL | Kinh độ GPS check-out |
 | notes | TEXT | YES | NULL | Ghi chú |
 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian tạo |
-| created_by | INT | YES | NULL | FK to users.id - Người tạo |
 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian cập nhật |
-| updated_by | INT | YES | NULL | FK to users.id - Người cập nhật |
-
-**Primary Key**: `id`
-
-**Unique Constraints**:
-- `uk_employee_date`: (employee_id, attendance_date) - Mỗi employee chỉ có 1 record mỗi ngày
+| created_by | INT | YES | NULL | Người tạo |
+| updated_by | INT | YES | NULL | Người cập nhật |
 
 **Indexes**:
-- `idx_employee_id`: employee_id
-- `idx_attendance_date`: attendance_date
-- `idx_type`: type
-- `idx_status`: status
-- `idx_approval_status`: approval_status
-- `idx_approved_by`: approved_by
-- `idx_rejected_by`: rejected_by
-- `idx_late`: late
-- `idx_early_leave`: early_leave
+- `idx_employee_id` (employee_id)
+- `idx_attendance_date` (attendance_date)
+- `idx_type` (type)
+- `idx_status` (status)
+- `idx_approved_by` (approved_by)
+- `idx_special_case_type` (special_case_type)
+- `idx_is_edited` (is_edited)
+- `idx_edited_by` (edited_by)
+- `uk_employee_date` (employee_id, attendance_date) - UNIQUE
 
 **Foreign Keys**:
 - `employee_id` → `employees.id` (ON DELETE CASCADE)
 - `attendance_type_id` → `cat_attendance_types.id` (ON DELETE SET NULL)
 - `approved_by` → `users.id` (ON DELETE SET NULL)
-- `rejected_by` → `users.id` (ON DELETE SET NULL)
-- `created_by` → `users.id` (ON DELETE SET NULL)
-- `updated_by` → `users.id` (ON DELETE SET NULL)
-
-**Check Constraints**:
-- `chk_checkout_after_checkin`: check_out_time IS NULL OR check_out_time >= check_in_time
-- `chk_working_hours_range`: working_hours IS NULL OR (working_hours >= 0 AND working_hours <= 16)
-- `chk_overtime_hours`: overtime_hours >= 0
+- `edited_by` → `users.id` (ON DELETE SET NULL)
 
 **Business Rules**:
-- Mỗi employee chỉ có 1 attendance record mỗi ngày
-- check_out_time phải > check_in_time
-- working_hours = (check_out_time - check_in_time) - break_time
-- overtime_hours = working_hours - standard_working_hours (nếu > 0)
-- late = true nếu check_in_time > late_threshold
-- early_leave = true nếu check_out_time < early_leave_threshold
+- Mỗi nhân viên chỉ có 1 bản ghi chấm công mỗi ngày (unique constraint)
+- `check_out_time` phải sau `check_in_time`
+- `working_hours` được tính tự động: (check_out_time - check_in_time) - break_duration_minutes
+- `overtime_hours` = max(0, working_hours - standard_working_hours)
+- `late_minutes` được tính nếu check_in_time > late_threshold_time
+- `early_leave_minutes` được tính nếu check_out_time < early_leave_threshold_time
 
 ---
 
-### 2. cat_attendance_types
+### 2. attendance_edit_history
 
-**Purpose**: Danh mục loại chấm công
+**Mục đích**: Lưu trữ lịch sử chỉnh sửa attendance records (audit trail)
 
-**Table Name**: `cat_attendance_types`
+**Primary Key**: `id` (INT, AUTO_INCREMENT)
 
 **Columns**:
 
 | Column Name | Type | Nullable | Default | Description |
 |------------|------|----------|---------|-------------|
 | id | INT | NO | AUTO_INCREMENT | Primary key |
-| code | VARCHAR(20) | NO | - | Mã loại chấm công (unique) |
-| name | VARCHAR(100) | NO | - | Tên loại chấm công |
-| description | TEXT | YES | NULL | Mô tả |
-| is_active | BOOLEAN | NO | true | Có active không |
-| sort_order | INT | NO | 0 | Thứ tự sắp xếp |
-| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian tạo |
-| updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian cập nhật |
-| created_by | INT | YES | NULL | FK to users.id |
-| updated_by | INT | YES | NULL | FK to users.id |
-
-**Primary Key**: `id`
-
-**Unique Constraints**:
-- `code`: Unique
+| attendance_record_id | INT | NO | - | FK to attendance_records.id |
+| field_name | VARCHAR(100) | NO | - | Tên field được thay đổi |
+| old_value | TEXT | YES | NULL | Giá trị cũ |
+| new_value | TEXT | YES | NULL | Giá trị mới |
+| edit_reason | TEXT | YES | NULL | Lý do chỉnh sửa |
+| edited_by | INT | YES | NULL | FK to users.id |
+| edited_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian chỉnh sửa |
 
 **Indexes**:
-- `idx_code`: code
-- `idx_name`: name
-- `idx_is_active`: is_active
+- `idx_attendance_record_id` (attendance_record_id)
+- `idx_edited_by` (edited_by)
+- `idx_edited_at` (edited_at)
 
-**Default Values**:
-- NORMAL: Chấm công bình thường
-- OVERTIME: Làm thêm giờ
-- HOLIDAY: Ngày lễ
-- WEEKEND: Cuối tuần
+**Foreign Keys**:
+- `attendance_record_id` → `attendance_records.id` (ON DELETE CASCADE)
+- `edited_by` → `users.id` (ON DELETE SET NULL)
+
+**Business Rules**:
+- Mỗi lần chỉnh sửa attendance record sẽ tạo nhiều records trong bảng này (1 record cho mỗi field thay đổi)
+- Không được xóa records trong bảng này (audit trail)
 
 ---
 
 ### 3. attendance_configurations
 
-**Purpose**: Cấu hình rules và policies cho attendance (global, department, position-specific)
+**Mục đích**: Cấu hình rules và policies cho attendance management
 
-**Table Name**: `attendance_configurations`
+**Primary Key**: `id` (INT, AUTO_INCREMENT)
 
 **Columns**:
 
 | Column Name | Type | Nullable | Default | Description |
 |------------|------|----------|---------|-------------|
 | id | INT | NO | AUTO_INCREMENT | Primary key |
-| department_id | INT | YES | NULL | FK to departments.id (null = global) |
-| position_id | INT | YES | NULL | FK to positions.id (position-specific) |
-| standard_working_hours | DECIMAL(4,2) | NO | 8.0 | Giờ làm việc chuẩn/ngày |
-| break_time | DECIMAL(4,2) | NO | 1.0 | Thời gian nghỉ (giờ) |
-| late_threshold | TIME | NO | '09:00:00' | Ngưỡng đi muộn |
-| early_leave_threshold | TIME | NO | '17:00:00' | Ngưỡng về sớm |
-| overtime_rate | DECIMAL(5,2) | NO | 1.5 | Hệ số tính overtime |
-| weekend_overtime_rate | DECIMAL(5,2) | NO | 2.0 | Hệ số overtime cuối tuần |
-| holiday_overtime_rate | DECIMAL(5,2) | NO | 2.5 | Hệ số overtime ngày lễ |
-| is_active | BOOLEAN | NO | true | Có active không |
+| config_type | ENUM | NO | 'GLOBAL' | Loại cấu hình: GLOBAL, DEPARTMENT, POSITION |
+| department_id | INT | YES | NULL | FK to departments.id (nếu config_type = DEPARTMENT) |
+| position_id | INT | YES | NULL | FK to positions.id (nếu config_type = POSITION) |
+| standard_working_hours | DECIMAL(5,2) | NO | 8.0 | Số giờ làm việc tiêu chuẩn mỗi ngày |
+| break_duration_minutes | INT | NO | 60 | Thời gian nghỉ trưa (phút) |
+| late_threshold_time | TIME | NO | '09:00:00' | Thời gian muộn (mặc định 9:00 AM) |
+| early_leave_threshold_time | TIME | NO | '17:00:00' | Thời gian về sớm (mặc định 5:00 PM) |
+| earliest_check_in_time | TIME | NO | '06:00:00' | Thời gian check-in sớm nhất (mặc định 6:00 AM) |
+| latest_check_out_time | TIME | NO | '23:59:59' | Thời gian check-out muộn nhất |
+| location_validation_enabled | TINYINT | NO | 0 | Bật/tắt validation địa điểm |
+| allowed_location_radius_meters | INT | NO | 100 | Bán kính cho phép (mét) |
+| overtime_calculation_method | ENUM | NO | 'SIMPLE' | Phương pháp tính overtime: SIMPLE, TIERED |
+| overtime_rate_multiplier | DECIMAL(5,2) | NO | 1.5 | Hệ số nhân cho overtime (1.5 = 150%) |
+| weekend_overtime_rate_multiplier | DECIMAL(5,2) | NO | 2.0 | Hệ số nhân cho overtime cuối tuần |
+| holiday_overtime_rate_multiplier | DECIMAL(5,2) | NO | 3.0 | Hệ số nhân cho overtime ngày lễ |
+| is_active | TINYINT | NO | 1 | Trạng thái active |
 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian tạo |
 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian cập nhật |
-| created_by | INT | YES | NULL | FK to users.id |
-| updated_by | INT | YES | NULL | FK to users.id |
-
-**Primary Key**: `id`
+| created_by | INT | YES | NULL | Người tạo |
+| updated_by | INT | YES | NULL | Người cập nhật |
 
 **Indexes**:
-- `idx_department_id`: department_id
-- `idx_position_id`: position_id
-- `idx_is_active`: is_active
+- `idx_config_type` (config_type)
+- `idx_department_id` (department_id)
+- `idx_position_id` (position_id)
+- `idx_is_active` (is_active)
 
 **Foreign Keys**:
 - `department_id` → `departments.id` (ON DELETE CASCADE)
 - `position_id` → `positions.id` (ON DELETE CASCADE)
-- `created_by` → `users.id` (ON DELETE SET NULL)
-- `updated_by` → `users.id` (ON DELETE SET NULL)
-
-**Check Constraints**:
-- `chk_standard_working_hours`: standard_working_hours > 0 AND standard_working_hours <= 24
-- `chk_break_time`: break_time >= 0 AND break_time <= 8
-- `chk_overtime_rate`: overtime_rate > 0
 
 **Business Rules**:
-- Position rules override department rules
-- Department rules override global rules (department_id = NULL, position_id = NULL)
-- Nếu không có position/department specific rules, dùng global rules
-- Chỉ có một active configuration cho mỗi department/position combination (enforced by business logic)
+- Chỉ có 1 GLOBAL configuration (config_type = 'GLOBAL', department_id = NULL, position_id = NULL)
+- Có thể có nhiều DEPARTMENT configurations (config_type = 'DEPARTMENT', department_id != NULL)
+- Có thể có nhiều POSITION configurations (config_type = 'POSITION', position_id != NULL)
+- Priority: POSITION > DEPARTMENT > GLOBAL (specific configs override global configs)
+- Khi tính toán attendance, system sẽ tìm config theo priority: POSITION → DEPARTMENT → GLOBAL
+
+---
+
+### 4. attendance_locations
+
+**Mục đích**: Quản lý danh sách địa điểm được phép chấm công (GPS locations)
+
+**Primary Key**: `id` (INT, AUTO_INCREMENT)
+
+**Columns**:
+
+| Column Name | Type | Nullable | Default | Description |
+|------------|------|----------|---------|-------------|
+| id | INT | NO | AUTO_INCREMENT | Primary key |
+| name | VARCHAR(200) | NO | - | Tên địa điểm |
+| address | TEXT | YES | NULL | Địa chỉ |
+| latitude | DECIMAL(10,8) | NO | - | Vĩ độ GPS |
+| longitude | DECIMAL(11,8) | NO | - | Kinh độ GPS |
+| radius_meters | INT | NO | 100 | Bán kính cho phép (mét) |
+| description | TEXT | YES | NULL | Mô tả |
+| is_active | TINYINT | NO | 1 | Trạng thái active |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian tạo |
+| updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian cập nhật |
+| created_by | INT | YES | NULL | Người tạo |
+| updated_by | INT | YES | NULL | Người cập nhật |
+
+**Indexes**:
+- `idx_name` (name)
+- `idx_is_active` (is_active)
+
+**Business Rules**:
+- Khi `location_validation_enabled = 1` trong attendance_configurations, system sẽ validate GPS coordinates của check-in/check-out với các locations trong bảng này
+- Validation: Khoảng cách từ GPS coordinates đến location center phải <= radius_meters
+- Có thể có nhiều locations (office, warehouse, remote locations)
+
+---
+
+### 5. cat_attendance_types
+
+**Mục đích**: Danh mục loại chấm công (reference data)
+
+**Primary Key**: `id` (INT, AUTO_INCREMENT)
+
+**Columns**:
+
+| Column Name | Type | Nullable | Default | Description |
+|------------|------|----------|---------|-------------|
+| id | INT | NO | AUTO_INCREMENT | Primary key |
+| code | VARCHAR(20) | NO | UNIQUE | Mã loại chấm công |
+| name | VARCHAR(100) | NO | - | Tên loại chấm công |
+| description | TEXT | YES | NULL | Mô tả |
+| is_active | TINYINT | NO | 1 | Trạng thái active |
+| sort_order | INT | NO | 0 | Thứ tự sắp xếp |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian tạo |
+| updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | Thời gian cập nhật |
+| created_by | INT | YES | NULL | Người tạo |
+| updated_by | INT | YES | NULL | Người cập nhật |
+
+**Indexes**:
+- `idx_code` (code) - UNIQUE
+- `idx_name` (name)
+- `idx_is_active` (is_active)
+
+**Default Data**:
+- `NORMAL`: Chấm công bình thường
+- `REMOTE_WORK`: Làm việc từ xa
+- `BUSINESS_TRIP`: Công tác
+- `HOLIDAY_WORK`: Làm việc ngày lễ
+- `WEEKEND_WORK`: Làm việc cuối tuần
+- `OVERTIME`: Làm thêm giờ
 
 ---
 
 ## 🔗 Entity Relationships
 
-### ERD (Text-based)
-
 ```
-employees (1) ───────< (N) attendance_records
-    │
-    │ employee_id (FK)
-    │
-    └───> (1) ───────< (N) users (approved_by, rejected_by, created_by, updated_by)
+employees (1) ──< (N) attendance_records
+                    │
+                    ├──> (N) attendance_edit_history
+                    │
+                    └──> (1) cat_attendance_types
 
-cat_attendance_types (1) ───────< (N) attendance_records
-    │
-    │ attendance_type_id (FK, nullable)
+attendance_configurations
+    ├──> (1) departments (nếu config_type = DEPARTMENT)
+    └──> (1) positions (nếu config_type = POSITION)
 
-departments (1) ───────< (N) attendance_configurations
-    │
-    │ department_id (FK, nullable)
-
-positions (1) ───────< (N) attendance_configurations
-    │
-    │ position_id (FK, nullable)
+users
+    ├──> (1) attendance_records (approved_by)
+    ├──> (1) attendance_records (edited_by)
+    └──> (1) attendance_edit_history (edited_by)
 ```
-
-### Relationship Details
-
-1. **Employee → Attendance Records**: One-to-Many
-   - Một employee có nhiều attendance records
-   - Foreign key: `attendance_records.employee_id → employees.id`
-   - ON DELETE: CASCADE (khi xóa employee, xóa tất cả attendance records)
-
-2. **Attendance Type → Attendance Records**: One-to-Many (optional)
-   - Một attendance type có nhiều attendance records
-   - Foreign key: `attendance_records.attendance_type_id → cat_attendance_types.id`
-   - ON DELETE: SET NULL
-
-3. **User → Attendance Records (Approver)**: One-to-Many
-   - Một user (manager) có thể approve/reject nhiều attendance records
-   - Foreign keys: `attendance_records.approved_by → users.id`, `attendance_records.rejected_by → users.id`
-   - ON DELETE: SET NULL
-
-4. **User → Attendance Records (Creator/Updater)**: One-to-Many
-   - Foreign keys: `attendance_records.created_by → users.id`, `attendance_records.updated_by → users.id`
-   - ON DELETE: SET NULL
-
-5. **Department → Attendance Configurations**: One-to-Many
-   - Một department có thể có nhiều configurations (nhưng chỉ một active)
-   - Foreign key: `attendance_configurations.department_id → departments.id`
-   - ON DELETE: CASCADE
-
-6. **Position → Attendance Configurations**: One-to-Many
-   - Một position có thể có nhiều configurations (nhưng chỉ một active)
-   - Foreign key: `attendance_configurations.position_id → positions.id`
-   - ON DELETE: CASCADE
 
 ---
 
-## 📊 Indexes Strategy
+## 📊 ERD (Text-based)
 
-### attendance_records Indexes
+```
+┌─────────────────┐
+│   employees     │
+├─────────────────┤
+│ id (PK)         │
+│ employee_code   │
+│ ...             │
+└────────┬────────┘
+         │
+         │ 1:N
+         │
+         ▼
+┌─────────────────────────────┐
+│   attendance_records        │
+├─────────────────────────────┤
+│ id (PK)                     │
+│ employee_id (FK)            │
+│ attendance_date             │
+│ check_in_time               │
+│ check_out_time              │
+│ check_in_latitude           │
+│ check_in_longitude          │
+│ check_out_latitude          │
+│ check_out_longitude         │
+│ working_hours               │
+│ overtime_hours              │
+│ late_minutes                │
+│ early_leave_minutes         │
+│ type                        │
+│ special_case_type           │
+│ status                      │
+│ ...                         │
+└────────┬────────────────────┘
+         │
+         │ 1:N
+         │
+         ▼
+┌─────────────────────────────┐
+│ attendance_edit_history     │
+├─────────────────────────────┤
+│ id (PK)                     │
+│ attendance_record_id (FK)    │
+│ field_name                  │
+│ old_value                   │
+│ new_value                   │
+│ edit_reason                 │
+│ edited_by (FK)              │
+│ edited_at                   │
+└─────────────────────────────┘
 
-1. **Primary Key**: `id` - Auto-increment, unique
-2. **Unique Index**: `uk_employee_date` (employee_id, attendance_date) - Đảm bảo mỗi employee chỉ có 1 record/ngày
-3. **Index on employee_id**: `idx_employee_id` - Cho queries filter theo employee
-4. **Index on attendance_date**: `idx_attendance_date` - Cho queries filter theo date range
-5. **Index on status**: `idx_status` - Cho queries filter theo status
-6. **Index on approval_status**: `idx_approval_status` - Cho queries filter theo approval status
-7. **Index on approved_by**: `idx_approved_by` - Cho queries filter theo approver
-8. **Index on rejected_by**: `idx_rejected_by` - Cho queries filter theo rejector
-9. **Index on late**: `idx_late` - Cho queries filter late records
-10. **Index on early_leave**: `idx_early_leave` - Cho queries filter early leave records
-11. **Index on type**: `idx_type` - Cho queries filter theo type
+┌─────────────────────────────┐
+│ attendance_configurations   │
+├─────────────────────────────┤
+│ id (PK)                     │
+│ config_type                 │
+│ department_id (FK)          │
+│ position_id (FK)            │
+│ standard_working_hours      │
+│ late_threshold_time         │
+│ early_leave_threshold_time  │
+│ location_validation_enabled │
+│ ...                         │
+└─────────────────────────────┘
 
-**Composite Indexes** (for common queries):
-- (employee_id, attendance_date) - Already unique
-- (employee_id, status) - For employee status queries
-- (approval_status, attendance_date) - For pending approval queries by date
-
-### cat_attendance_types Indexes
-
-1. **Primary Key**: `id`
-2. **Unique Index**: `code` - Đảm bảo code unique
-3. **Index on name**: `idx_name` - Cho search
-4. **Index on is_active**: `idx_is_active` - Cho filter active types
-
-### attendance_configurations Indexes
-
-1. **Primary Key**: `id`
-2. **Index on department_id**: `idx_department_id` - Cho queries filter theo department
-3. **Index on position_id**: `idx_position_id` - Cho queries filter theo position
-4. **Index on is_active**: `idx_is_active` - Cho filter active configurations
+┌─────────────────────────────┐
+│ attendance_locations        │
+├─────────────────────────────┤
+│ id (PK)                     │
+│ name                        │
+│ latitude                    │
+│ longitude                   │
+│ radius_meters               │
+│ ...                         │
+└─────────────────────────────┘
+```
 
 ---
 
-## 🔒 Constraints and Data Integrity
+## 🔍 Indexes Strategy
 
-### Primary Keys
-- `attendance_records.id`: Primary key
-- `cat_attendance_types.id`: Primary key
-- `attendance_configurations.id`: Primary key
+### Primary Indexes
+- Tất cả foreign keys đều có indexes
+- Composite unique index: `(employee_id, attendance_date)` cho attendance_records
 
-### Unique Constraints
-- `attendance_records`: (employee_id, attendance_date) - Mỗi employee chỉ có 1 record/ngày
-- `cat_attendance_types.code`: Code phải unique
+### Query Optimization Indexes
+- **attendance_records**:
+  - `idx_employee_id`: Filter by employee
+  - `idx_attendance_date`: Filter by date range
+  - `idx_status`: Filter by approval status
+  - `idx_type`: Filter by attendance type
+  - `idx_special_case_type`: Filter by special cases
+  - `idx_is_edited`: Filter edited records
+
+- **attendance_edit_history**:
+  - `idx_attendance_record_id`: Get edit history for a record
+  - `idx_edited_at`: Filter by edit time
+
+- **attendance_configurations**:
+  - `idx_config_type`: Filter by config type
+  - `idx_department_id`: Get department configs
+  - `idx_position_id`: Get position configs
+
+### Composite Indexes
+- `(employee_id, attendance_date)`: Unique constraint, also used for queries
+- `(config_type, department_id, position_id)`: For finding applicable configs
+
+---
+
+## 🔐 Constraints & Data Integrity
 
 ### Foreign Key Constraints
-- Tất cả foreign keys đều có ON DELETE rules phù hợp
-- CASCADE cho employee → attendance_records (khi xóa employee)
-- SET NULL cho optional relationships
+- `attendance_records.employee_id` → `employees.id` (ON DELETE CASCADE)
+- `attendance_records.attendance_type_id` → `cat_attendance_types.id` (ON DELETE SET NULL)
+- `attendance_records.approved_by` → `users.id` (ON DELETE SET NULL)
+- `attendance_records.edited_by` → `users.id` (ON DELETE SET NULL)
+- `attendance_edit_history.attendance_record_id` → `attendance_records.id` (ON DELETE CASCADE)
+- `attendance_configurations.department_id` → `departments.id` (ON DELETE CASCADE)
+- `attendance_configurations.position_id` → `positions.id` (ON DELETE CASCADE)
+
+### Unique Constraints
+- `attendance_records`: `(employee_id, attendance_date)` - Mỗi nhân viên chỉ có 1 bản ghi mỗi ngày
+- `cat_attendance_types.code`: Unique code
 
 ### Check Constraints
-- `chk_checkout_after_checkin`: check_out_time >= check_in_time
-- `chk_working_hours_range`: working_hours >= 0 AND working_hours <= 16
-- `chk_overtime_hours`: overtime_hours >= 0
-- `chk_standard_working_hours`: standard_working_hours > 0 AND <= 24
-- `chk_break_time`: break_time >= 0 AND <= 8
-- `chk_overtime_rate`: overtime_rate > 0
+- `check_out_time >= check_in_time` (enforced at application level)
+- `working_hours >= 0 AND working_hours <= 16` (safety limit)
+- `overtime_hours >= 0`
+- `late_minutes >= 0`
+- `early_leave_minutes >= 0`
+- `radius_meters > 0` (for attendance_locations)
+- `standard_working_hours > 0 AND standard_working_hours <= 24`
 
 ---
 
 ## 📈 Performance Considerations
 
-### Query Optimization
+### Partitioning Strategy
+- Có thể partition `attendance_records` theo `attendance_date` (monthly partitions) nếu data lớn
+- Có thể partition `attendance_edit_history` theo `edited_at` (monthly partitions)
 
-**Common Queries**:
-1. Get employee attendance by date range
-   - Index: (employee_id, attendance_date)
-   
-2. Get pending approvals for manager
-   - Index: (approval_status, approved_by, attendance_date)
-   
-3. Get attendance reports by department
-   - Index: (attendance_date, status) + JOIN với employees.department_id
+### Archiving Strategy
+- Archive old attendance records (> 2 years) sang archive table
+- Archive old edit history (> 1 year) sang archive table
 
-4. Calculate working hours and overtime
-   - Computed columns hoặc stored procedures
-   - Indexes on working_hours, overtime_hours for aggregation
-
-### Denormalization Considerations
-
-**Computed Fields** (stored for performance):
-- `working_hours`: Calculated and stored
-- `overtime_hours`: Calculated and stored
-- `late_minutes`: Calculated and stored
-- `early_leave_minutes`: Calculated and stored
-
-**Rationale**: These fields are frequently queried and aggregated, storing them improves query performance.
+### Caching Strategy
+- Cache `attendance_configurations` (GLOBAL, DEPARTMENT, POSITION) trong Redis
+- Cache `attendance_locations` trong Redis
+- Cache `cat_attendance_types` trong Redis
 
 ---
 
 ## 🔄 Migration Scripts
 
-### Migration File
-- **File**: `scripts/database/migrations/20251119200000-UpdateAttendanceManagement-Schema.ts`
-- **Purpose**: Update attendance_records table and create attendance_configurations table
-- **Changes**:
-  1. Add missing columns to attendance_records
-  2. Update enum values
-  3. Change break_duration_minutes to break_time
-  4. Create attendance_configurations table
-  5. Add indexes and constraints
+### Migration: 1735000000000-ExtendAttendanceManagement.ts
 
-### Running Migration
+**Changes**:
+1. Extend `attendance_records` table với:
+   - GPS location fields (check_in_latitude, check_in_longitude, check_out_latitude, check_out_longitude)
+   - Location fields (check_in_location, check_out_location)
+   - Reason fields (late_reason, early_leave_reason, edit_reason)
+   - Edit tracking fields (is_edited, edited_at, edited_by)
+   - Special case type field
+   - Approval notes field
+   - Extended ENUM values cho type và status
 
-```bash
-# Navigate to scripts/database directory
-cd scripts/database
+2. Create `attendance_edit_history` table cho audit trail
 
-# Run migration
-npm run migration:run
+3. Create `attendance_configurations` table cho rules configuration
 
-# Or using TypeORM CLI
-npx typeorm migration:run -d data-source.ts
-```
+4. Create `attendance_locations` table cho GPS location management
 
----
-
-## 📝 Data Requirements Summary
-
-**Primary Tables**:
-- `attendance_records`: Core attendance data
-- `cat_attendance_types`: Attendance type catalog
-- `attendance_configurations`: Rules configuration
-
-**Related Tables**:
-- `employees`: Employee information
-- `users`: User accounts and authentication
-- `departments`: Department information
-- `positions`: Position information
-
-**Audit Requirements**:
-- All attendance record changes logged via created_by, updated_by
-- Edit history tracked via edit_reason
-- Approval/rejection actions tracked via approved_by, rejected_by, approved_at, rejected_at
+5. Insert default data:
+   - Default attendance types
+   - Default global configuration
 
 ---
 
-## ✅ ACID Compliance
+## 📝 Notes
 
-- **Atomicity**: Transactions ensure all attendance operations complete or rollback
-- **Consistency**: Constraints ensure data integrity
-- **Isolation**: Transactions are isolated to prevent conflicts
-- **Durability**: All changes are persisted to disk
-
----
-
-## 🔗 Related Documents
-
-- [Use Cases: Attendance Management](../business-analyst/use-cases-attendance-management.md)
-- [Business Rules: Attendance Management](../business-analyst/business-rules-hr-management.md#br-hr-006-attendance-management-chấm-công)
-- [Requirements: Attendance Management](../business-analyst/requirements-attendance-management.md)
-- [Epic: HR Management](../product-owner/epic-hr-management.md)
+1. **GPS Coordinates**: Sử dụng DECIMAL(10,8) cho latitude và DECIMAL(11,8) cho longitude để đảm bảo độ chính xác
+2. **Location Validation**: Có thể bật/tắt validation địa điểm qua `location_validation_enabled` trong configurations
+3. **Edit History**: Mỗi lần edit attendance record sẽ tạo nhiều records trong edit_history (1 record cho mỗi field thay đổi)
+4. **Configuration Priority**: POSITION > DEPARTMENT > GLOBAL
+5. **Working Hours Calculation**: Được tính tự động tại application level, không dùng generated column để linh hoạt hơn
+6. **Overtime Calculation**: Có thể dùng SIMPLE hoặc TIERED method tùy theo configuration
 
 ---
 
 **Last Updated**: November 2025  
-**Next Review**: December 2025
+**Next Review**: December 2025  
+**Version**: 1.0
 

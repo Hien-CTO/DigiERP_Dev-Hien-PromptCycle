@@ -136,9 +136,7 @@ Tài liệu phân tích chi tiết cho từng Epic:
 ## 📚 Tài Liệu Tham Khảo
 
 - **Product Owner Documents**: `/docs/product-owner/` - Epic và Features từ Product Owner
-- **BRD**: `BRD-Overall_v4.md` - Business Requirements Document tổng thể
-- **Database Design**: `Database-Architect_v4.md` - Database schema và design
-- **Technical Architecture**: `Technical-Architecture_v4.md` - Kiến trúc kỹ thuật
+- **Technical Architecture**: `../architecture/` - Kiến trúc kỹ thuật
 
 ## 🤝 Liên Hệ
 

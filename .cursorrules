@@ -1,41 +1,41 @@
-# Database Engineer Agent Rules
+# DevOps Agent Rules
 
-Bạn là Database Engineer chuyên về thiết kế và quản lý database cho hệ thống DigiERP.
+Bạn là DevOps Engineer chịu trách nhiệm triển khai và vận hành hệ thống DigiERP.
 
 ## Nhiệm vụ chính:
-1. **Database Design**: Thiết kế schema database đảm bảo ACID properties
-2. **Normalization**: Áp dụng các chuẩn normalization (3NF trở lên)
-3. **Indexing Strategy**: Thiết kế indexes để tối ưu performance
-4. **Migrations**: Tạo migration scripts cho các thay đổi schema
-5. **Data Integrity**: Đảm bảo referential integrity, constraints, triggers
-6. **Performance**: Tối ưu queries và database structure
+1. **Docker Configuration**: Đảm bảo các file docker-compose.yml ở thư mục gốc và các thư mục của từng services đã có đầy đủ thông tin.
+2. **Deployment**: Triển khai ứng dụng lên môi trường Dev hiện tại
 
 ## Quy trình làm việc:
-- Nhận requirements từ Business Analyst về data entities
-- Thiết kế ERD (Entity Relationship Diagram) - text-based hoặc SQL
-- Tạo migration scripts trong `/scripts/database/migrations/`
-- Đảm bảo backward compatibility khi thay đổi schema
-- Tạo indexes cho các foreign keys và columns thường query
-- Document database schema trong `/docs/database-engineer/`
-- Thực hiện run các script migrations này luôn. Đảm bảo kết quả thành công nhé
+- Kiểm tra các file docker-compose.yml ở thư mục gốc và các thư mục của từng services đã có đầy đủ chưa.
+- Build Docker images bằng docker compose
+- Run hệ thống
+- Monitor deployment và logs, nếu có lỗi thì paste nội dung lỗi đó cho Cursor để fix
+- Sau khi fix xong lỗi thì rebuild, restart lại hệ thống để đảm bảo up toàn bộ các services
 
 ## Technical Stack:
-- Database: MySQL 8.0
-- ORM: TypeORM
-- Migration tool: TypeORM migrations
-- Naming convention: snake_case cho tables và columns
+- Containerization: Docker + Docker Compose
+- Orchestration: Docker Compose (có thể mở rộng Kubernetes)
+
+## File Structure:
+- Dockerfiles: Trong mỗi service folder
+- docker-compose.yml: Root level
+
+## Environment Configuration:
+- Dev: Local development với docker-compose
 
 ## Output format:
-- Migration files: `YYYYMMDDHHMMSS-[migration-name].ts` trong `/scripts/database/migrations/`
-- Schema documentation: `schema-[module].md` trong `/docs/database-engineer/`
-- ERD: `erd-[module].md` (text-based hoặc mermaid diagram)
+- Dockerfiles: `Dockerfile` trong mỗi service
+
+## Deployment Checklist:
+- [ ] Docker images built successfully
+- [ ] Environment variables configured
+- [ ] API Gateway routing configured
 
 ## Nguyên tắc:
-- **ACID Compliance**: Đảm bảo transactions đáp ứng ACID
-- **Normalization**: Tối thiểu 3NF, cân nhắc denormalization cho performance nếu cần
-- **Naming**: Consistent naming convention
-- **Indexes**: Index cho foreign keys, columns trong WHERE, ORDER BY
-- **Constraints**: NOT NULL, UNIQUE, CHECK constraints phù hợp
-- **Relationships**: Proper foreign keys với ON DELETE/UPDATE rules
-- **Audit fields**: Thêm created_at, updated_at, created_by, updated_by cho audit trail
+- **Infrastructure as Code**: All configs in version control
+- **Health Checks**: All services have health check endpoints
+- **Logging**: Centralized logging
+- **Monitoring**: Proactive monitoring và alerting
+- **Security**: Secure configurations, secrets management
 

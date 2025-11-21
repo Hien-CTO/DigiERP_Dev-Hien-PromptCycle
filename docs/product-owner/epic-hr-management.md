@@ -147,31 +147,48 @@ Epic này tập trung vào quản lý nhân sự, phòng ban, chức vụ, hợp
 - ✅ Employee can check in via web app or mobile app
 - ✅ System records check-in time with timestamp
 - ✅ System records check-in location (GPS coordinates or address)
+- ✅ System validates check-in time is not earlier than 6:00 AM (configurable, shows warning if earlier)
+- ✅ System validates employee status is Active before allowing check-in/check-out
+- ✅ System validates employee has RECORD_ATTENDANCE permission
 - ✅ Employee can check out at the end of working day
 - ✅ System records check-out time with timestamp
-- ✅ System prevents duplicate check-in for the same day
+- ✅ System records check-out location (GPS coordinates or address)
+- ✅ System prevents duplicate check-in for the same day (shows existing check-in information)
 - ✅ System allows only one check-in and one check-out per day per employee
 - ✅ System validates check-out time is after check-in time
+- ✅ System validates check-out time is not later than 11:59 PM
 - ✅ System displays current attendance status (checked in/checked out)
+- ✅ System validates location is within allowed radius (if location validation is enabled)
+- ✅ System automatically marks late check-in if check-in time > late threshold (default: 9:00 AM)
+- ✅ System calculates late minutes when late check-in is detected
+- ✅ System allows employee to enter late reason (optional but recommended)
+- ✅ System automatically sets status to PENDING_APPROVAL if late check-in or early check-out
 
 **US-008-005-002**: As an **Employee**, I want to **view my attendance history** so that **I can track my attendance records and verify my working hours**
 
 **Acceptance Criteria**:
-- ✅ Employee can view list of attendance records
-- ✅ System displays attendance records with date, check-in time, check-out time, working hours
-- ✅ System supports filtering by date range
+- ✅ Employee can view list of attendance records (only their own records)
+- ✅ System displays attendance records with: date, check-in time, check-out time, working hours, overtime hours
+- ✅ System supports filtering by date range, status, approval status
 - ✅ System shows attendance status (Normal, Late, Early Leave, Overtime)
 - ✅ System displays approval status (Pending, Approved, Rejected)
-- ✅ System allows employee to view attendance summary (total hours, overtime hours)
+- ✅ System allows employee to view attendance summary (total working hours, total overtime hours, late count, early leave count)
+- ✅ System displays location information (check-in/check-out locations)
+- ✅ System shows late minutes and early leave minutes for each record
+- ✅ System displays notes/reasons (late reason, early leave reason, edit reason, rejection reason)
+- ✅ System shows approval history (who approved/rejected, when, reason if rejected)
 
 **US-008-005-003**: As an **Employee**, I want to **edit my attendance record within 24 hours** so that **I can correct mistakes in check-in/check-out times**
 
 **Acceptance Criteria**:
 - ✅ Employee can edit attendance record within 24 hours of check-in
+- ✅ System requires employee to enter edit reason (mandatory) when editing
 - ✅ System requires approval for edited attendance records
-- ✅ System logs all changes to attendance records with audit trail
+- ✅ System logs all changes to attendance records with audit trail (old values, new values, edit reason, timestamp, editor)
 - ✅ System prevents editing attendance records older than 24 hours without manager approval
+- ✅ System prevents editing attendance records that have already been approved
 - ✅ System shows edit history for each attendance record
+- ✅ System automatically sets status to PENDING_APPROVAL after edit
 
 **US-008-005-004**: As a **Manager**, I want to **approve or reject attendance records** so that **I can ensure attendance accuracy before payroll calculation**
 
@@ -199,22 +216,28 @@ Epic này tập trung vào quản lý nhân sự, phòng ban, chức vụ, hợp
 
 **Acceptance Criteria**:
 - ✅ System calculates working hours = check-out time - check-in time - break time
-- ✅ System calculates overtime hours = working hours - 8 hours (if working hours > 8)
+- ✅ System calculates overtime hours = working hours - standard working hours (if working hours > standard working hours)
+- ✅ System validates working hours are between 0 and 16 hours (safety limit)
+- ✅ System shows warning and requires confirmation if working hours exceed 16 hours
+- ✅ System rejects attendance record if working hours < 0
 - ✅ System supports configurable working hours per day (default: 8 hours)
 - ✅ System supports configurable break time (default: 1 hour for lunch)
-- ✅ System handles weekend and holiday attendance differently
-- ✅ System calculates overtime rates based on company policy
+- ✅ System handles weekend and holiday attendance differently (different overtime rates)
+- ✅ System calculates overtime rates based on company policy (can vary by department/position)
 - ✅ System stores calculated hours in attendance record
+- ✅ System supports department-specific and position-specific overtime calculation rules
 
 **US-008-005-007**: As a **Payroll Specialist**, I want to **export attendance data for payroll calculation** so that **I can process payroll accurately and efficiently**
 
 **Acceptance Criteria**:
-- ✅ System allows exporting attendance data by date range
-- ✅ System exports only approved attendance records
+- ✅ System allows exporting attendance data by date range (required field)
+- ✅ System exports only approved attendance records by default (can include pending if needed)
 - ✅ System exports data in formats: Excel, CSV, JSON
-- ✅ System includes: employee ID, date, check-in time, check-out time, working hours, overtime hours
+- ✅ System includes all required fields: employee ID, employee name, date, check-in time, check-out time, working hours, overtime hours, late minutes, early leave minutes, approval status
 - ✅ System provides API endpoint for payroll service integration
 - ✅ System supports filtering by department, employee, approval status
+- ✅ System logs export action in audit trail with user, timestamp, and export parameters
+- ✅ System shows warning if date range exceeds 3 months
 
 **US-008-005-008**: As an **HR Manager**, I want to **configure attendance rules and policies** so that **the system enforces company attendance policies automatically**
 
@@ -326,32 +349,54 @@ Epic này tập trung vào quản lý nhân sự, phòng ban, chức vụ, hợp
 
 ---
 
-### Feature 6: Leave Management
+### Feature 6: Leave Management (Nghỉ Phép)
 **Priority**: High  
-**Status**: Completed
+**Status**: In Progress  
+**Feature ID**: FEAT-008-006
 
-**Mô tả**: Quản lý nghỉ phép với nhiều loại nghỉ và approval workflow.
+**Mô tả**: Quản lý nghỉ phép với nhiều loại nghỉ, approval workflow, và tự động tính toán leave balance. Hệ thống hỗ trợ nhân viên tạo yêu cầu nghỉ phép, quản lý leave balance, và tích hợp với attendance system.
+
+**Business Value**:
+- Giảm 60% thời gian xử lý yêu cầu nghỉ phép thủ công
+- Tăng 95% độ chính xác trong tính toán leave balance
+- Giảm 80% lỗi trong quản lý nghỉ phép
+- Tăng 70% sự hài lòng của nhân viên với quy trình nghỉ phép
 
 **User Stories**:
-- As an **Employee**, I want to **request leave** so that **I can take time off**
-- As a **Manager**, I want to **approve leave requests** so that **I can manage team availability**
-- As an **HR Manager**, I want to **track leave balances** so that **I can manage leave entitlements**
+- As an **Employee**, I want to **create leave requests** so that **I can request time off and plan my leave in advance**
+- As an **Employee**, I want to **view my leave balance** so that **I can plan my leave and know how many days I have available**
+- As a **Manager**, I want to **approve or reject leave requests** so that **I can manage team availability and ensure adequate coverage**
+- As an **HR Manager**, I want to **track leave balances and generate leave reports** so that **I can manage leave entitlements and monitor leave utilization**
+- As a **System**, I want to **automatically calculate leave entitlements** so that **leave balance is accurate and reflects company policies**
 
 **Acceptance Criteria**:
-- ✅ System allows creating leave requests
-- ✅ System supports leave types: Annual, Sick, Unpaid, Maternity, Paternity, etc.
-- ✅ System supports leave approval workflow
-- ✅ System tracks leave balance per employee
-- ✅ System calculates leave entitlements
-- ✅ System maintains leave history
+- ✅ System allows creating leave requests with leave type, dates, reason
+- ✅ System validates leave balance before allowing leave requests
+- ✅ System supports leave types: Annual, Sick, Unpaid, Maternity, Paternity, Emergency, Other
+- ✅ System supports leave approval workflow (Manager/HR Manager)
+- ✅ System automatically calculates and updates leave balance
+- ✅ System tracks leave balance per employee per leave type
+- ✅ System calculates leave entitlements automatically based on contract type, tenure, and company policies
+- ✅ System maintains complete leave history with audit trail
+- ✅ System prevents overlapping leave requests
+- ✅ System integrates with attendance system to mark leave days
+- ✅ System allows employees to edit/cancel pending leave requests
+- ✅ System provides manager dashboard for team leave management
+- ✅ System provides HR dashboard for organization-wide leave overview
+- ✅ System sends notifications for leave status updates
+- ✅ System supports mobile app for leave requests (planned)
+- ✅ System exports leave data for reporting and analytics
 
 **Leave Types**:
-- **Annual**: Nghỉ phép năm
-- **Sick**: Nghỉ ốm
-- **Unpaid**: Nghỉ không lương
-- **Maternity**: Nghỉ thai sản
-- **Paternity**: Nghỉ khi vợ sinh
-- **Other**: Các loại nghỉ khác
+- **Annual**: Nghỉ phép năm - Paid leave, based on tenure, can carry-over (max 5 days)
+- **Sick**: Nghỉ ốm - Paid leave, requires medical certificate if > 3 days
+- **Unpaid**: Nghỉ không lương - No balance limit, no salary during leave
+- **Maternity**: Nghỉ thai sản - 6 months for female employees, paid leave
+- **Paternity**: Nghỉ khi vợ sinh - 5-10 days for male employees, paid leave
+- **Emergency**: Nghỉ khẩn cấp - Unpaid leave for emergencies
+- **Other**: Các loại nghỉ khác - Custom leave types with configurable rules
+
+**Related Feature Document**: [Feature: Leave Management](./feature-leave-management.md)
 
 ---
 
